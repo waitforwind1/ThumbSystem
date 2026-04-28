@@ -17,17 +17,17 @@ public class Thumbs {
      * 
      */
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 点赞用户id
      */
-    private Integer userid;
+    private Long userid;
 
     /**
      * 文章id
      */
-    private Integer blogid;
+    private Long blogid;
 
     /**
      * 点赞时间

@@ -24,7 +24,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Override
     public Long writeBlog(String title, String content, String image) {
         if(this.getOne(new QueryWrapper<Blog>()
-                .eq("title",title))==null)
+                .eq("title",title))!=null)
             throw new BusinessException(ResultType.PARAM_ERROR,"文章已存在");
         Blog blog =new Blog();
         blog.setTitle(title);
@@ -35,23 +35,16 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     }
 
     @Override
-    public Blog searchBlog(Integer id) {
+    public Blog searchBlog(Long id) {
         if(id==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"文章id为空");
         Blog byId = this.getById(id);
         if(byId==null)
             throw new BusinessException(ResultType.USER_NOT_EXIST,"文章不存在");
-        return this.getById(id);
+        return byId;
     }
 
-    @Override
-    public boolean addThumbs(Integer userid, Integer blogid) {
-        if(userid==null || blogid==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"id为空");
-        Blog blog= searchBlog(blogid);
-        blog.setThumbcount(blog.getThumbcount()+1);
-        return this.save(blog);
-    }
+
 
 
 }

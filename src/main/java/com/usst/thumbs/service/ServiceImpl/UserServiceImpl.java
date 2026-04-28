@@ -40,15 +40,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultType.PARAM_ERROR,"账号不允许为空");
         if(password ==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"密码不允许为空");
-        if(password!=checkPassword)
+        if(!password.equals(checkPassword))
             throw new BusinessException(ResultType.PARAM_ERROR,"两次输入密码不一致");
         if(account.length()<6||account.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"账号长度不合法");
         if(password.length()<6||password.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"密码长度不合法");
-        String regex = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]$";
+        String illegalRegex = ".*[^A-Za-z0-9].*";
+        if(account.matches(illegalRegex))
+            throw new BusinessException(ResultType.PARAM_ERROR,"不允许包含特殊字符");
+        String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
-            throw new BusinessException(ResultType.PARAM_ERROR,"账号格式错误");
+            throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
         QueryWrapper queryWrapper= new QueryWrapper();
         queryWrapper.eq("account",account);
         if(userMapper.selectOne(queryWrapper)!=null)
@@ -71,11 +74,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultType.PARAM_ERROR,"账号长度不合法");
         if(password.length()<6||password.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"密码长度不合法");
-        String regex = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]$";
+        String illegalRegex = ".*[^A-Za-z0-9].*";
+        if(account.matches(illegalRegex))
+            throw new BusinessException(ResultType.PARAM_ERROR,"不允许包含特殊字符");
+        String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
-            throw new BusinessException(ResultType.PARAM_ERROR,"账号格式错误");
+            throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
         QueryWrapper queryWrapper= new QueryWrapper();
         queryWrapper.eq("account",account);
+        queryWrapper.eq("password",password);
         User user = userMapper.selectOne(queryWrapper);
         if(user==null)
             throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");

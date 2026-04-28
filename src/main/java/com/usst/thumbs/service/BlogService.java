@@ -14,8 +14,7 @@ public interface BlogService extends IService<Blog> {
 
      Long writeBlog(String title, String content,String image);
 
-     Blog searchBlog(Integer id);
+     Blog searchBlog(Long id);
 
-     boolean addThumbs(Integer userid,Integer blogid);
 
 }
