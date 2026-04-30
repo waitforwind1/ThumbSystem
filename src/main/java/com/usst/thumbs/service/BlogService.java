@@ -3,7 +3,13 @@ package com.usst.thumbs.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.usst.thumbs.model.Blog;
+import com.usst.thumbs.model.request.BlogAddRequest;
+import com.usst.thumbs.model.vo.BlogVO;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.catalina.filters.ExpiresFilter;
+
+import java.util.List;
 
 /**
 * @author 22097
@@ -12,9 +18,13 @@ import io.netty.util.concurrent.SingleThreadEventExecutor;
 */
 public interface BlogService extends IService<Blog> {
 
-     Long writeBlog(String title, String content,String image);
+     Boolean writeBlog(BlogAddRequest blogAddRequest,HttpServletRequest request);
 
      Blog searchBlog(Long id);
+
+     BlogVO getBlogvoByid(Long blogid, HttpServletRequest request);
+
+     List<BlogVO> getblogLists(List<Blog> blogList, HttpServletRequest request);
 
 
 }

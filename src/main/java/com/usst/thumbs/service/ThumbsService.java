@@ -2,6 +2,8 @@ package com.usst.thumbs.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.usst.thumbs.model.Thumbs;
+import com.usst.thumbs.model.request.DoThumbRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jdk.dynalink.linker.support.CompositeGuardingDynamicLinker;
 
 /**
@@ -10,7 +12,7 @@ import jdk.dynalink.linker.support.CompositeGuardingDynamicLinker;
 * @createDate 2026-04-28 21:04:00
 */
 public interface ThumbsService extends IService<Thumbs> {
-    boolean addThumbs(Long userid,Long blogid);
+    Boolean addThumbs(DoThumbRequest doThumbRequest, HttpServletRequest request);
 
-    boolean rmThumbs(Long userid,Long blogid);
+    Boolean rmThumbs(DoThumbRequest doThumbRequest, HttpServletRequest request);
 }

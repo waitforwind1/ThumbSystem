@@ -3,6 +3,7 @@ package com.usst.thumbs.service.ServiceImpl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.ResultType;
+import com.usst.thumbs.common.UserConstant;
 import com.usst.thumbs.exception.BusinessException;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.mapper.UserMapper;
@@ -46,7 +47,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultType.PARAM_ERROR,"账号长度不合法");
         if(password.length()<6||password.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"密码长度不合法");
-        String illegalRegex = ".*[^A-Za-z0-9].*";
+        String illegalRegex = ".*[^A-Za-z0-9_].";
         if(account.matches(illegalRegex))
             throw new BusinessException(ResultType.PARAM_ERROR,"不允许包含特殊字符");
         String regex = "^[A-Za-z0-9_]+$";
@@ -74,15 +75,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultType.PARAM_ERROR,"账号长度不合法");
         if(password.length()<6||password.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"密码长度不合法");
-        String illegalRegex = ".*[^A-Za-z0-9].*";
+        String illegalRegex = ".*[^A-Za-z0-9_].";
         if(account.matches(illegalRegex))
             throw new BusinessException(ResultType.PARAM_ERROR,"不允许包含特殊字符");
         String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
             throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
+        String newPassword = DigestUtils.md5DigestAsHex((SALT+password).getBytes(StandardCharsets.UTF_8));
         QueryWrapper queryWrapper= new QueryWrapper();
         queryWrapper.eq("account",account);
-        queryWrapper.eq("password",password);
+        queryWrapper.eq("password",newPassword);
         User user = userMapper.selectOne(queryWrapper);
         if(user==null)
             throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
@@ -91,6 +93,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return safeUser;
     }
 
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
+        return user;
+    }
 
 
     public User getsafeUser(User user){
@@ -99,9 +106,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         safeUser.setAccount(user.getAccount());
         safeUser.setUsername(user.getUsername());
         safeUser.setAvatar(user.getAvatar());
-        safeUser.setIdadmin(user.getIdadmin());
-        safeUser.setCreatetime(user.getCreatetime());
-        safeUser.setUpdatetime(user.getUpdatetime());
+        safeUser.setIsAdmin(user.getIsAdmin());
+        safeUser.setCreateTime(user.getCreateTime());
+        safeUser.setUpdateTime(user.getUpdateTime());
         return safeUser;
     }
 
