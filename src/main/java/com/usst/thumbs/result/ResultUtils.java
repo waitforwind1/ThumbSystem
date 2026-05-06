@@ -1,4 +1,4 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.result;
 
 public class ResultUtils {
     public static <T> Result<T> success(ResultType resultType,T data,String description){

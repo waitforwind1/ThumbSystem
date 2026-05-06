@@ -1,8 +1,7 @@
 package com.usst.thumbs.exception;
 
-import ch.qos.logback.core.encoder.EchoEncoder;
-import com.usst.thumbs.common.Result;
-import com.usst.thumbs.common.ResultUtils;
+import com.usst.thumbs.result.Result;
+import com.usst.thumbs.result.ResultUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 

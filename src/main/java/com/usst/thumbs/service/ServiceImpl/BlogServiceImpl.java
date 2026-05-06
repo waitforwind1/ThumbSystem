@@ -2,8 +2,8 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.databind.util.BeanUtil;
-import com.usst.thumbs.common.ResultType;
+import com.usst.thumbs.common.ThumbsConstant;
+import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Thumbs;
@@ -14,15 +14,16 @@ import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.service.ThumbsService;
 import com.usst.thumbs.service.UserService;
+import com.usst.thumbs.utils.RedisKeyUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Resource
     @Lazy
     private  ThumbsService thumbsService;
+
+    @Autowired
+    private RedisTemplate<String,Object> redisTemplate;
 
 
     @Override
@@ -81,11 +85,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         BeanUtils.copyProperties(blog,blogVO);
         if(user==null)
             return blogVO;
-        Thumbs thumbs = thumbsService.lambdaQuery()
-                .eq(Thumbs::getUserId,user.getId())
-                .eq(Thumbs::getBlogId,blog.getId())
-                .one();
-        blogVO.setHasThumb(thumbs!=null);
+        Boolean thumbs = thumbsService.hasThumb(user.getId(),blog.getId());
+        blogVO.setHasThumb(thumbs);
         return blogVO;
     }
 
@@ -94,13 +95,15 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         User loginUser = userService.getLoginUser(request);
         Map<Long,Boolean> thumbsHashMap =new HashMap<>();
         if(ObjectUtils.isNotEmpty(loginUser)){
-            Set<Long> blogidsSet = blogList.stream().map(Blog::getId).collect(Collectors.toSet());
-            // 对去重后的每篇文章获取点赞
-            List<Thumbs> thumbsList = thumbsService.lambdaQuery()
-                    .eq(Thumbs::getUserId,loginUser.getId())
-                    .in(Thumbs::getBlogId,blogidsSet)
-                    .list();
-            thumbsList.forEach(thumbs -> thumbsHashMap.put(thumbs.getBlogId(),true));
+            List<Object> blogidsSet = blogList.stream().map(blog -> blog.getId().toString()).collect(Collectors.toList());
+            List<Object> thumbsList = redisTemplate.opsForHash().multiGet(RedisKeyUtil.getUserThumbsKey(loginUser.getId()),blogidsSet);
+            for(int i=0;i<thumbsList.size();i++){
+                if(thumbsList.get(i)==null)
+                    continue;
+                // todo:这里的和续写项目中的写的不太一样  直接强转格式有风险 这种写法更保险
+                //  项目里的：put(Long.valueOf(blogIdList.get(i).toString()), true);
+                thumbsHashMap.put(Long.valueOf(blogidsSet.get(i).toString()),true);
+            }
         }
         return blogList.stream()
                 .map(blog -> {

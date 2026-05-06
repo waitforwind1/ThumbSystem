@@ -1,21 +1,15 @@
 package com.usst.thumbs.controller;
 
-import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
-import com.usst.thumbs.common.Result;
-import com.usst.thumbs.common.ResultType;
-import com.usst.thumbs.common.ResultUtils;
+import com.usst.thumbs.result.Result;
+import com.usst.thumbs.result.ResultType;
+import com.usst.thumbs.result.ResultUtils;
 import com.usst.thumbs.exception.BusinessException;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.vo.UserVO;
 import com.usst.thumbs.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
-import org.springframework.util.DigestUtils;
-import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +26,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public Result<UserVO> userLOogin(String account, String password, HttpServletRequest request){
+    public Result<UserVO> userLogin(String account, String password, HttpServletRequest request){
         if(account==null||password==null)
             throw new BusinessException(ResultType.PARAMS_EMPTY,"请输入参数");
         User user = userService.login(account,password,request);

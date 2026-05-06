@@ -1,7 +1,6 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.result;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 
 @AllArgsConstructor
 public enum ResultType {

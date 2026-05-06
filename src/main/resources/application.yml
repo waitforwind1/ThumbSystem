@@ -6,6 +6,14 @@ spring:
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
     url: jdbc:mysql://localhost:3306/thumbs
+  data:
+    redis:
+#      username: ${REDIS_USER}
+      password: ${REDIS_PASSWORD}
+      database: 0
+      host: localhost
+      port: 6379
+      connect-timeout: 5000ms
 
 mybatis-plus:
   configuration:

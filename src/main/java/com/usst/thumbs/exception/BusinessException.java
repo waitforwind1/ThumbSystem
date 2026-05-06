@@ -1,6 +1,6 @@
 package com.usst.thumbs.exception;
 
-import com.usst.thumbs.common.ResultType;
+import com.usst.thumbs.result.ResultType;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

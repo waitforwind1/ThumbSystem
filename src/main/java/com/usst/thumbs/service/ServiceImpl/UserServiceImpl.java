@@ -2,19 +2,15 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.ResultType;
-import com.usst.thumbs.common.UserConstant;
+import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.exception.BusinessException;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.mapper.UserMapper;
 import com.usst.thumbs.service.UserService;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
-import javax.swing.plaf.synth.SynthLookAndFeel;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
