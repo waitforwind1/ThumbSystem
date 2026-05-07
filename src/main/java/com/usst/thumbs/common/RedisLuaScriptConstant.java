@@ -34,7 +34,7 @@ public class RedisLuaScriptConstant {
                 return -1
             end
             
-            local hashKey = "userid..":"..blogid"
+            local hashKey = userid..":"..blogid
             local oldNumber = tonumber(redis.call("HGet",tempThumbKey,hashKey) or 0)
             local newNumber = oldNumber - 1
             redis.call("HSET",tempThumbKey,hashKey,newNumber)

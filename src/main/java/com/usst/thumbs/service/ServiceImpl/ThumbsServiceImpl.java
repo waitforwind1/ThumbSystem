@@ -29,7 +29,7 @@ import static com.usst.thumbs.common.ThumbsConstant.UN_THUMB_CONSTANT;
 * @description 针对表【thumbs】的数据库操作Service实现
 * @createDate 2026-04-28 21:04:00
 */
-@Service("ThumbsService")
+@Service("ThumbsServiceDB")
 public class ThumbsServiceImpl extends ServiceImpl<ThumbsMapper, Thumbs>
     implements ThumbsService{
 

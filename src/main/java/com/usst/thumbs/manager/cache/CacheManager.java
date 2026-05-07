@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.usst.thumbs.common.ThumbsConstant.THUMB_CONSTANT;
 
 
 // 一个基于 HeavyKeeper 的本地热点缓存管理器（heavyKeeper算法在其他地方写）
@@ -81,7 +82,8 @@ public class CacheManager {
 
         // 4. 如果是热 Key 且不在本地缓存，则缓存数据
         if (addResult.isHotKey()) {
-            localCache.put(compositeKey, redisValue);
+//            localCache.put(compositeKey, redisValue);
+            localCache.put(compositeKey, THUMB_CONSTANT);
         }
 
         return redisValue;

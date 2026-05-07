@@ -2,7 +2,9 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.RedisLuaScriptConstant;
+import com.usst.thumbs.common.ThumbsConstant;
 import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.manager.cache.CacheManager;
 import com.usst.thumbs.mapper.ThumbsMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Thumbs;
@@ -26,6 +28,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 
+import static com.usst.thumbs.common.ThumbsConstant.THUMB_CONSTANT;
+import static com.usst.thumbs.common.ThumbsConstant.UN_THUMB_CONSTANT;
+
 /**
 * @author 22097
 * @description 针对表【thumbs】的数据库操作Service实现
@@ -33,7 +38,7 @@ import java.util.Arrays;
 */
 
 // 这个类是第二节的实现  是为了缓解数据库的写压力 是通过在写的时候建立一个以时间片为标志的临时记录，存储到redis中，同时写点赞和取消点赞的脚本，定期执行同步到数据库
-@Service("ThumbsServiceRedis")
+@Service("thumbsService")
 public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
     implements ThumbsService{
 
@@ -44,8 +49,14 @@ public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
     @Lazy
     private BlogService blogService;
 
+    private final CacheManager cacheManager;
+
     @Autowired
     private  RedisTemplate<String,Object> redisTemplate;
+
+    public ThumbsServiceRedisImpl(CacheManager cacheManager){
+        this.cacheManager = cacheManager;
+    }
 
     public Boolean doThumb(DoThumbRequest doThumbRequest,HttpServletRequest request){
         if(doThumbRequest==null || request==null)
@@ -71,7 +82,10 @@ public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
         );
         if(result== LuaStatesEnum.FAIL.getValue())
             throw new BusinessException(ResultType.NO_AUTH, "用户已点赞，无法重复");
-        return result==LuaStatesEnum.SUCCESS.getValue();
+        Boolean res = result==LuaStatesEnum.SUCCESS.getValue();
+        if(res) cacheManager.putIfPresent(ThumbsConstant.USER_THUMB_KEY_PREFIX+userid,blogid
+                .toString(),THUMB_CONSTANT);
+        return res;
     }
 
     public Boolean undoThumb(DoThumbRequest doThumbRequest,HttpServletRequest request){
@@ -98,17 +112,18 @@ public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
         );
         if(result== LuaStatesEnum.FAIL.getValue())
             throw new BusinessException(ResultType.NO_AUTH, "用户未点赞");
-        return result==LuaStatesEnum.SUCCESS.getValue();
+        Boolean res = result==LuaStatesEnum.SUCCESS.getValue();
+        if(res) cacheManager.putIfPresent(ThumbsConstant.USER_THUMB_KEY_PREFIX+userid,blogid
+                .toString(),UN_THUMB_CONSTANT);
+        return res;
     }
 
 
-    public String getTimeSlice(){
-        LocalDateTime localDateTime =  LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        String timeSlice = localDateTime.format(dateTimeFormatter);
-        return timeSlice;
+    public String getTimeSlice() {
+        LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+        int second = (now.getSecond() / 10) * 10;
+        return now.format(DateTimeFormatter.ofPattern("HH:mm:")) + String.format("%02d", second);
     }
-
 
     @Override
     public Boolean addThumbs(DoThumbRequest doThumbRequest, HttpServletRequest request) {
@@ -124,7 +139,12 @@ public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
     public Boolean hasThumb(Long userid, Long blogid) {
         if(userid==null || blogid==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"用户未登录");
-        return redisTemplate.opsForHash().hasKey(RedisKeyUtil.getUserThumbsKey(userid),blogid.toString());
+//        return redisTemplate.opsForHash().hasKey(RedisKeyUtil.getUserThumbsKey(userid),blogid.toString());
+        Object thumbId = cacheManager.get(RedisKeyUtil.getUserThumbsKey(userid), blogid.toString());
+        if(thumbId==null)
+            return false;
+        Number id = (Number) thumbId;
+        return id.longValue() != UN_THUMB_CONSTANT;
     }
 }
 

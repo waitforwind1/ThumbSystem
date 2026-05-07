@@ -6,6 +6,8 @@ public interface ThumbsConstant {
 
     String TEMP_THUMB_KEY_PREFIX = "thumb:temp:%s";
 
+    Long THUMB_CONSTANT = 1L;
+
     Long UN_THUMB_CONSTANT = 0L;
 
 }

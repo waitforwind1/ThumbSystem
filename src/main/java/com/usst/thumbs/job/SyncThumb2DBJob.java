@@ -4,11 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Thumbs;
-import com.usst.thumbs.model.enums.LuaStatesEnum;
 import com.usst.thumbs.model.enums.ThumbTypeEnum;
 import com.usst.thumbs.service.ThumbsService;
 import com.usst.thumbs.utils.RedisKeyUtil;
-import io.netty.util.internal.StringUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -52,7 +50,7 @@ public class SyncThumb2DBJob {
             nowDate = nowDate.minusMinutes(1);
         }
 
-        String date = nowDate.format(DateTimeFormatter.ofPattern("HH:mm:")) + second;
+        String date = nowDate.format(DateTimeFormatter.ofPattern("HH:mm:")) + String.format("%02d", second);
 
         syncThumb2DBByDate(date);
 

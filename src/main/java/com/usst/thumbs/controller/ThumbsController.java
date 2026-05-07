@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "点赞接口")
 public class ThumbsController {
 
-    @Resource(name = "ThumbsService")
+    @Resource
     private ThumbsService thumbsService;
 
     @PostMapping("/addThumb")
