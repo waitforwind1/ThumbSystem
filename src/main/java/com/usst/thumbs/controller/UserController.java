@@ -34,6 +34,15 @@ public class UserController {
         BeanUtils.copyProperties(user,userVO);
         return ResultUtils.success(ResultType.SUCCESS,userVO,"登录成功");
     }
+    @PostMapping("/loginById")
+    public Result<UserVO> userLogin(Long userId, HttpServletRequest request){
+        if(userId==null || userId<0)
+            throw new BusinessException(ResultType.PARAM_ERROR,"非法参数");
+        User user = userService.login(userId,request);
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user,userVO);
+        return ResultUtils.success(ResultType.SUCCESS,userVO,"登录成功");
+    }
 
     @PostMapping("/register")
     public Result userRegister(String account, String password,String checkPassword){

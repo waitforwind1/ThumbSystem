@@ -2,10 +2,10 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.exception.BusinessException;
-import com.usst.thumbs.model.User;
 import com.usst.thumbs.mapper.UserMapper;
+import com.usst.thumbs.model.User;
+import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -86,6 +86,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
         User safeUser = getsafeUser(user);
         request.getSession().setAttribute(USER_LOGIN_STATE,safeUser);
+        return safeUser;
+    }
+
+    @Override
+    public User login(Long userId,HttpServletRequest request){
+        if(userId==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"请求参数不能为空");
+        User user = this.getById(userId);
+        if(user==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"用户不存在");
+        User safeUser = getsafeUser(user);
+        request.getSession().setAttribute(USER_LOGIN_STATE, safeUser);
         return safeUser;
     }
 

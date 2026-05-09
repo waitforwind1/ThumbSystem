@@ -18,5 +18,6 @@ public interface UserService extends IService<User> {
 
     User getLoginUser(HttpServletRequest request);
 
+    User login(Long userId,HttpServletRequest request);
 
 }
