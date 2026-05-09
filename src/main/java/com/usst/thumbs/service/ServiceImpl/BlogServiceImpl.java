@@ -2,16 +2,14 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.ThumbsConstant;
-import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Blog;
-import com.usst.thumbs.model.Thumbs;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.BlogAddRequest;
 import com.usst.thumbs.model.vo.BlogVO;
+import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.BlogService;
-import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.service.ThumbsService;
 import com.usst.thumbs.service.UserService;
 import com.usst.thumbs.utils.RedisKeyUtil;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -42,7 +39,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Resource
     private  UserService userService;
 
-    @Resource
+    @Resource(name = "thumbService")
     @Lazy
     private  ThumbsService thumbsService;
 

@@ -1,0 +1,1465 @@
+Compiled from "DefaultPulsarMessageListenerContainer.java"
+final class org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer$Listener implements org.springframework.scheduling.SchedulingAwareRunnable {
+  private final org.springframework.pulsar.listener.PulsarRecordMessageListener<T> listener;
+
+  private final org.springframework.pulsar.listener.PulsarBatchMessageListener<T> batchMessageListener;
+
+  private final org.springframework.pulsar.listener.PulsarContainerProperties containerProperties;
+
+  private org.apache.pulsar.client.api.Consumer<T> consumer;
+
+  private final java.util.Set<org.apache.pulsar.client.api.MessageId> nackableMessages;
+
+  private final org.springframework.pulsar.listener.PulsarConsumerErrorHandler<T> pulsarConsumerErrorHandler;
+
+  private final org.springframework.pulsar.core.ConsumerBuilderCustomizer<T> consumerBuilderCustomizer;
+
+  private final boolean isBatchListener;
+
+  private final org.springframework.pulsar.listener.AckMode ackMode;
+
+  private org.apache.pulsar.client.api.SubscriptionType subscriptionType;
+
+  private org.springframework.pulsar.transaction.PulsarAwareTransactionManager transactionManager;
+
+  private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+
+  final org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer this$0;
+
+  org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer$Listener(org.apache.pulsar.client.api.MessageListener<?>, org.springframework.pulsar.listener.PulsarContainerProperties);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+         5: aload_0
+         6: invokespecial #7                  // Method java/lang/Object."<init>":()V
+         9: aload_0
+        10: new           #13                 // class java/util/HashSet
+        13: dup
+        14: invokespecial #15                 // Method java/util/HashSet."<init>":()V
+        17: putfield      #16                 // Field nackableMessages:Ljava/util/Set;
+        20: aload_0
+        21: aload_3
+        22: putfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        25: aload_0
+        26: aload_0
+        27: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        30: invokevirtual #24                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.isBatchListener:()Z
+        33: putfield      #30                 // Field isBatchListener:Z
+        36: aload_0
+        37: aload_0
+        38: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        41: invokevirtual #33                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.getAckMode:()Lorg/springframework/pulsar/listener/AckMode;
+        44: putfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        47: aload_0
+        48: aload_0
+        49: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        52: invokevirtual #41                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSubscriptionType:()Lorg/apache/pulsar/client/api/SubscriptionType;
+        55: putfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+        58: aload_0
+        59: aload_1
+        60: invokevirtual #49                 // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.getPulsarConsumerErrorHandler:()Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+        63: putfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+        66: aload_0
+        67: aload_0
+        68: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        71: invokevirtual #59                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.transactions:()Lorg/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings;
+        74: invokevirtual #63                 // Method validateTransactionSettings:(Lorg/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings;)V
+        77: aload_0
+        78: aload_0
+        79: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        82: invokevirtual #59                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.transactions:()Lorg/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings;
+        85: invokevirtual #67                 // Method org/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings.getTransactionManager:()Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        88: putfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        91: aload_0
+        92: aload_0
+        93: invokevirtual #77                 // Method determineTransactionTemplate:()Lorg/springframework/transaction/support/TransactionTemplate;
+        96: putfield      #81                 // Field transactionTemplate:Lorg/springframework/transaction/support/TransactionTemplate;
+        99: aload_2
+       100: instanceof    #85                 // class org/springframework/pulsar/listener/PulsarBatchMessageListener
+       103: ifeq          122
+       106: aload_0
+       107: aload_2
+       108: checkcast     #85                 // class org/springframework/pulsar/listener/PulsarBatchMessageListener
+       111: putfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+       114: aload_0
+       115: aconst_null
+       116: putfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+       119: goto          152
+       122: aload_2
+       123: ifnull        142
+       126: aload_0
+       127: aload_2
+       128: checkcast     #95                 // class org/springframework/pulsar/listener/PulsarRecordMessageListener
+       131: putfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+       134: aload_0
+       135: aconst_null
+       136: putfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+       139: goto          152
+       142: aload_0
+       143: aconst_null
+       144: putfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+       147: aload_0
+       148: aconst_null
+       149: putfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+       152: aload_0
+       153: aload_1
+       154: invokevirtual #97                 // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.getConsumerBuilderCustomizer:()Lorg/springframework/pulsar/core/ConsumerBuilderCustomizer;
+       157: putfield      #101                // Field consumerBuilderCustomizer:Lorg/springframework/pulsar/core/ConsumerBuilderCustomizer;
+       160: aload_0
+       161: invokevirtual #105                // Method extractDirectConsumerProperties:()Ljava/util/Map;
+       164: astore        4
+       166: aload_0
+       167: aload         4
+       169: invokevirtual #109                // Method populateAllNecessaryPropertiesIfNeedBe:(Ljava/util/Map;)V
+       172: new           #113                // class org/apache/pulsar/client/api/BatchReceivePolicy$Builder
+       175: dup
+       176: invokespecial #115                // Method org/apache/pulsar/client/api/BatchReceivePolicy$Builder."<init>":()V
+       179: aload_3
+       180: invokevirtual #116                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getMaxNumMessages:()I
+       183: invokevirtual #120                // Method org/apache/pulsar/client/api/BatchReceivePolicy$Builder.maxNumMessages:(I)Lorg/apache/pulsar/client/api/BatchReceivePolicy$Builder;
+       186: aload_3
+       187: invokevirtual #124                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getMaxNumBytes:()I
+       190: invokevirtual #127                // Method org/apache/pulsar/client/api/BatchReceivePolicy$Builder.maxNumBytes:(I)Lorg/apache/pulsar/client/api/BatchReceivePolicy$Builder;
+       193: aload_3
+       194: invokevirtual #130                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getBatchTimeoutMillis:()I
+       197: getstatic     #133                // Field java/util/concurrent/TimeUnit.MILLISECONDS:Ljava/util/concurrent/TimeUnit;
+       200: invokevirtual #139                // Method org/apache/pulsar/client/api/BatchReceivePolicy$Builder.timeout:(ILjava/util/concurrent/TimeUnit;)Lorg/apache/pulsar/client/api/BatchReceivePolicy$Builder;
+       203: invokevirtual #143                // Method org/apache/pulsar/client/api/BatchReceivePolicy$Builder.build:()Lorg/apache/pulsar/client/api/BatchReceivePolicy;
+       206: astore        5
+       208: aload         4
+       210: ldc           #147                // String topicNames
+       212: invokeinterface #149,  2          // InterfaceMethod java/util/Map.remove:(Ljava/lang/Object;)Ljava/lang/Object;
+       217: checkcast     #155                // class java/util/Set
+       220: astore        6
+       222: aload         4
+       224: ldc           #157                // String properties
+       226: invokeinterface #149,  2          // InterfaceMethod java/util/Map.remove:(Ljava/lang/Object;)Ljava/lang/Object;
+       231: checkcast     #150                // class java/util/Map
+       234: astore        7
+       236: new           #159                // class java/util/ArrayList
+       239: dup
+       240: invokespecial #161                // Method java/util/ArrayList."<init>":()V
+       243: astore        8
+       245: aload         8
+       247: aload         4
+       249: aload         5
+       251: invokedynamic #162,  0            // InvokeDynamic #0:customize:(Ljava/util/Map;Lorg/apache/pulsar/client/api/BatchReceivePolicy;)Lorg/springframework/pulsar/core/ConsumerBuilderCustomizer;
+       256: invokeinterface #166,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       261: pop
+       262: aload_0
+       263: getfield      #101                // Field consumerBuilderCustomizer:Lorg/springframework/pulsar/core/ConsumerBuilderCustomizer;
+       266: ifnull        281
+       269: aload         8
+       271: aload_0
+       272: getfield      #101                // Field consumerBuilderCustomizer:Lorg/springframework/pulsar/core/ConsumerBuilderCustomizer;
+       275: invokeinterface #166,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+       280: pop
+       281: aload_0
+       282: aload_1
+       283: invokevirtual #172                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.getPulsarConsumerFactory:()Lorg/springframework/pulsar/core/PulsarConsumerFactory;
+       286: aload_3
+       287: invokevirtual #176                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSchema:()Lorg/apache/pulsar/client/api/Schema;
+       290: aload         6
+       292: aload_0
+       293: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       296: invokevirtual #180                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSubscriptionName:()Ljava/lang/String;
+       299: aload         7
+       301: aload         8
+       303: invokeinterface #184,  6          // InterfaceMethod org/springframework/pulsar/core/PulsarConsumerFactory.createConsumer:(Lorg/apache/pulsar/client/api/Schema;Ljava/util/Collection;Ljava/lang/String;Ljava/util/Map;Ljava/util/List;)Lorg/apache/pulsar/client/api/Consumer;
+       308: putfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       311: aload_0
+       312: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       315: ifnull        322
+       318: iconst_1
+       319: goto          323
+       322: iconst_0
+       323: ldc           #194                // String Unable to create a consumer
+       325: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+       328: aload_0
+       329: getfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+       332: ifnonnull     343
+       335: aload_0
+       336: aload_0
+       337: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       340: invokevirtual #202                // Method updateSubscriptionTypeFromConsumer:(Lorg/apache/pulsar/client/api/Consumer;)V
+       343: goto          362
+       346: astore        4
+       348: aload_1
+       349: invokestatic  #208                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$000:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+       352: aload         4
+       354: invokedynamic #212,  0            // InvokeDynamic #1:get:()Ljava/util/function/Supplier;
+       359: invokevirtual #216                // Method org/springframework/core/log/LogAccessor.error:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+       362: return
+      Exception table:
+         from    to  target type
+           160   343   346   Class org/springframework/pulsar/PulsarException
+
+  private void validateTransactionSettings(org.springframework.pulsar.listener.PulsarContainerProperties$TransactionSettings);
+    Code:
+         0: aload_1
+         1: invokevirtual #222                // Method org/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings.isEnabled:()Z
+         4: ifne          8
+         7: return
+         8: aload_1
+         9: invokevirtual #67                 // Method org/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings.getTransactionManager:()Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        12: ifnull        19
+        15: iconst_1
+        16: goto          20
+        19: iconst_0
+        20: ldc           #225                // String Transactions are enabled but txn manager is not set
+        22: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+        25: aload_0
+        26: getfield      #30                 // Field isBatchListener:Z
+        29: ifne          49
+        32: aload_0
+        33: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        36: invokevirtual #33                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.getAckMode:()Lorg/springframework/pulsar/listener/AckMode;
+        39: getstatic     #227                // Field org/springframework/pulsar/listener/AckMode.BATCH:Lorg/springframework/pulsar/listener/AckMode;
+        42: if_acmpne     49
+        45: iconst_1
+        46: goto          50
+        49: iconst_0
+        50: istore_2
+        51: iload_2
+        52: ifne          59
+        55: iconst_1
+        56: goto          60
+        59: iconst_0
+        60: ldc           #232                // String Transactional record listeners can not use batch ack mode
+        62: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+        65: aload_0
+        66: getfield      #30                 // Field isBatchListener:Z
+        69: ifeq          89
+        72: aload_0
+        73: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        76: invokevirtual #33                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.getAckMode:()Lorg/springframework/pulsar/listener/AckMode;
+        79: getstatic     #234                // Field org/springframework/pulsar/listener/AckMode.RECORD:Lorg/springframework/pulsar/listener/AckMode;
+        82: if_acmpne     89
+        85: iconst_1
+        86: goto          90
+        89: iconst_0
+        90: istore_3
+        91: iload_3
+        92: ifne          99
+        95: iconst_1
+        96: goto          100
+        99: iconst_0
+       100: ldc           #237                // String Transactional batch listeners do not support AckMode.RECORD
+       102: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+       105: aload_0
+       106: getfield      #30                 // Field isBatchListener:Z
+       109: ifeq          123
+       112: aload_0
+       113: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       116: ifnull        123
+       119: iconst_1
+       120: goto          124
+       123: iconst_0
+       124: istore        4
+       126: iload         4
+       128: ifne          135
+       131: iconst_1
+       132: goto          136
+       135: iconst_0
+       136: ldc           #239                // String Transactional batch listeners do not support custom error handlers
+       138: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+       141: return
+
+  private org.springframework.transaction.support.TransactionTemplate determineTransactionTemplate();
+    Code:
+         0: aload_0
+         1: getfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+         4: ifnonnull     9
+         7: aconst_null
+         8: areturn
+         9: new           #241                // class org/springframework/transaction/support/TransactionTemplate
+        12: dup
+        13: aload_0
+        14: getfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        17: invokespecial #243                // Method org/springframework/transaction/support/TransactionTemplate."<init>":(Lorg/springframework/transaction/PlatformTransactionManager;)V
+        20: astore_1
+        21: aload_0
+        22: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        25: invokevirtual #59                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.transactions:()Lorg/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings;
+        28: invokevirtual #246                // Method org/springframework/pulsar/listener/PulsarContainerProperties$TransactionSettings.determineTransactionDefinition:()Lorg/springframework/transaction/TransactionDefinition;
+        31: astore_2
+        32: aload_2
+        33: ifnull        55
+        36: aload_2
+        37: invokeinterface #250,  1          // InterfaceMethod org/springframework/transaction/TransactionDefinition.getPropagationBehavior:()I
+        42: ifeq          55
+        45: aload_2
+        46: invokeinterface #250,  1          // InterfaceMethod org/springframework/transaction/TransactionDefinition.getPropagationBehavior:()I
+        51: iconst_3
+        52: if_icmpne     59
+        55: iconst_1
+        56: goto          60
+        59: iconst_0
+        60: ldc           #255                // String Transaction propagation behavior must be REQUIRED or REQUIRES_NEW
+        62: invokestatic  #196                // Method org/springframework/util/Assert.state:(ZLjava/lang/String;)V
+        65: aload_2
+        66: ifnull        74
+        69: aload_2
+        70: aload_1
+        71: invokestatic  #257                // Method org/springframework/beans/BeanUtils.copyProperties:(Ljava/lang/Object;Ljava/lang/Object;)V
+        74: aload_1
+        75: areturn
+
+  private void updateSubscriptionTypeFromConsumer(org.apache.pulsar.client.api.Consumer<T>);
+    Code:
+         0: ldc_w         #263                // class org/apache/pulsar/client/impl/ConsumerImpl
+         3: ldc_w         #265                // String conf
+         6: invokestatic  #267                // Method org/springframework/util/ReflectionUtils.findField:(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Field;
+         9: astore_2
+        10: aload_2
+        11: invokestatic  #273                // Method org/springframework/util/ReflectionUtils.makeAccessible:(Ljava/lang/reflect/Field;)V
+        14: aload_2
+        15: aload_1
+        16: invokestatic  #277                // Method org/springframework/util/ReflectionUtils.getField:(Ljava/lang/reflect/Field;Ljava/lang/Object;)Ljava/lang/Object;
+        19: astore_3
+        20: aload_3
+        21: instanceof    #281                // class org/apache/pulsar/client/impl/conf/ConsumerConfigurationData
+        24: ifeq          42
+        27: aload_3
+        28: checkcast     #281                // class org/apache/pulsar/client/impl/conf/ConsumerConfigurationData
+        31: astore        4
+        33: aload_0
+        34: aload         4
+        36: invokevirtual #283                // Method org/apache/pulsar/client/impl/conf/ConsumerConfigurationData.getSubscriptionType:()Lorg/apache/pulsar/client/api/SubscriptionType;
+        39: putfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+        42: goto          63
+        45: astore_2
+        46: aload_0
+        47: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        50: invokestatic  #286                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$100:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+        53: aload_2
+        54: aload_2
+        55: invokedynamic #289,  0            // InvokeDynamic #2:get:(Ljava/lang/Exception;)Ljava/util/function/Supplier;
+        60: invokevirtual #216                // Method org/springframework/core/log/LogAccessor.error:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+        63: return
+      Exception table:
+         from    to  target type
+             0    42    45   Class java/lang/Exception
+
+  private java.util.Map<java.lang.String, java.lang.Object> extractDirectConsumerProperties();
+    Code:
+         0: aload_0
+         1: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+         4: invokevirtual #292                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getPulsarConsumerProperties:()Ljava/util/Properties;
+         7: astore_1
+         8: aload_1
+         9: invokevirtual #296                // Method java/util/Properties.entrySet:()Ljava/util/Set;
+        12: invokeinterface #302,  1          // InterfaceMethod java/util/Set.stream:()Ljava/util/stream/Stream;
+        17: invokedynamic #306,  0            // InvokeDynamic #3:apply:()Ljava/util/function/Function;
+        22: invokedynamic #310,  0            // InvokeDynamic #4:apply:()Ljava/util/function/Function;
+        27: invokedynamic #311,  0            // InvokeDynamic #5:apply:()Ljava/util/function/BinaryOperator;
+        32: invokedynamic #314,  0            // InvokeDynamic #6:get:()Ljava/util/function/Supplier;
+        37: invokestatic  #315                // Method java/util/stream/Collectors.toMap:(Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/BinaryOperator;Ljava/util/function/Supplier;)Ljava/util/stream/Collector;
+        40: invokeinterface #321,  2          // InterfaceMethod java/util/stream/Stream.collect:(Ljava/util/stream/Collector;)Ljava/lang/Object;
+        45: checkcast     #150                // class java/util/Map
+        48: areturn
+
+  private void populateAllNecessaryPropertiesIfNeedBe(java.util.Map<java.lang.String, java.lang.Object>);
+    Code:
+         0: aload_1
+         1: ldc           #147                // String topicNames
+         3: invokeinterface #327,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+         8: ifeq          58
+        11: aload_1
+        12: ldc           #147                // String topicNames
+        14: invokeinterface #330,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+        19: checkcast     #332                // class java/lang/String
+        22: astore_2
+        23: aload_2
+        24: ldc_w         #334                // String ,
+        27: invokestatic  #336                // Method org/springframework/util/StringUtils.delimitedListToStringArray:(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
+        30: astore_3
+        31: aload_3
+        32: invokestatic  #342                // InterfaceMethod java/util/Set.of:([Ljava/lang/Object;)Ljava/util/Set;
+        35: astore        4
+        37: aload         4
+        39: invokeinterface #346,  1          // InterfaceMethod java/util/Set.isEmpty:()Z
+        44: ifne          58
+        47: aload_1
+        48: ldc           #147                // String topicNames
+        50: aload         4
+        52: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        57: pop
+        58: aload_1
+        59: ldc_w         #353                // String subscriptionType
+        62: invokeinterface #327,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+        67: ifne          93
+        70: aload_0
+        71: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        74: invokevirtual #41                 // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSubscriptionType:()Lorg/apache/pulsar/client/api/SubscriptionType;
+        77: astore_2
+        78: aload_2
+        79: ifnull        93
+        82: aload_1
+        83: ldc_w         #353                // String subscriptionType
+        86: aload_2
+        87: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        92: pop
+        93: aload_1
+        94: ldc           #147                // String topicNames
+        96: invokeinterface #327,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+       101: ifne          137
+       104: aload_0
+       105: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       108: invokevirtual #354                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getTopics:()Ljava/util/Set;
+       111: astore_2
+       112: aload_0
+       113: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       116: invokevirtual #354                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getTopics:()Ljava/util/Set;
+       119: invokeinterface #346,  1          // InterfaceMethod java/util/Set.isEmpty:()Z
+       124: ifne          137
+       127: aload_1
+       128: ldc           #147                // String topicNames
+       130: aload_2
+       131: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       136: pop
+       137: aload_1
+       138: ldc_w         #357                // String topicsPattern
+       141: invokeinterface #327,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+       146: ifne          172
+       149: aload_0
+       150: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       153: invokevirtual #359                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getTopicsPattern:()Ljava/lang/String;
+       156: astore_2
+       157: aload_2
+       158: ifnull        172
+       161: aload_1
+       162: ldc_w         #357                // String topicsPattern
+       165: aload_2
+       166: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       171: pop
+       172: aload_1
+       173: ldc_w         #362                // String subscriptionName
+       176: invokeinterface #327,  2          // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+       181: ifne          214
+       184: aload_0
+       185: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       188: invokevirtual #180                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSubscriptionName:()Ljava/lang/String;
+       191: invokestatic  #364                // Method org/springframework/util/StringUtils.hasText:(Ljava/lang/String;)Z
+       194: ifeq          214
+       197: aload_1
+       198: ldc_w         #362                // String subscriptionName
+       201: aload_0
+       202: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+       205: invokevirtual #180                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getSubscriptionName:()Ljava/lang/String;
+       208: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       213: pop
+       214: aload_0
+       215: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       218: getfield      #368                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.negativeAckRedeliveryBackoff:Lorg/apache/pulsar/client/api/RedeliveryBackoff;
+       221: astore_2
+       222: aload_2
+       223: ifnull        237
+       226: aload_1
+       227: ldc_w         #372                // String negativeAckRedeliveryBackoff
+       230: aload_2
+       231: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       236: pop
+       237: aload_0
+       238: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       241: getfield      #373                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.ackTimeoutRedeliveryBackoff:Lorg/apache/pulsar/client/api/RedeliveryBackoff;
+       244: astore_3
+       245: aload_3
+       246: ifnull        260
+       249: aload_1
+       250: ldc_w         #376                // String ackTimeoutRedeliveryBackoff
+       253: aload_3
+       254: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       259: pop
+       260: aload_0
+       261: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       264: getfield      #377                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.deadLetterPolicy:Lorg/apache/pulsar/client/api/DeadLetterPolicy;
+       267: astore        4
+       269: aload         4
+       271: ifnull        286
+       274: aload_1
+       275: ldc_w         #381                // String deadLetterPolicy
+       278: aload         4
+       280: invokeinterface #349,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+       285: pop
+       286: return
+
+  public boolean isLongLived();
+    Code:
+         0: iconst_1
+         1: ireturn
+
+  public void run();
+    Code:
+         0: aload_0
+         1: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+         4: getfield      #382                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.listenerConsumerThread:Ljava/util/concurrent/atomic/AtomicReference;
+         7: invokestatic  #386                // Method java/lang/Thread.currentThread:()Ljava/lang/Thread;
+        10: invokevirtual #392                // Method java/util/concurrent/atomic/AtomicReference.set:(Ljava/lang/Object;)V
+        13: aload_0
+        14: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        17: invokevirtual #398                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.publishConsumerStartingEvent:()V
+        20: aload_0
+        21: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        24: invokevirtual #401                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.publishConsumerStartedEvent:()V
+        27: new           #404                // class java/util/concurrent/atomic/AtomicBoolean
+        30: dup
+        31: iconst_0
+        32: invokespecial #406                // Method java/util/concurrent/atomic/AtomicBoolean."<init>":(Z)V
+        35: astore_1
+        36: new           #404                // class java/util/concurrent/atomic/AtomicBoolean
+        39: dup
+        40: iconst_0
+        41: invokespecial #406                // Method java/util/concurrent/atomic/AtomicBoolean."<init>":(Z)V
+        44: astore_2
+        45: aconst_null
+        46: astore_3
+        47: aconst_null
+        48: astore        4
+        50: aload_0
+        51: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        54: invokevirtual #409                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.isRunning:()Z
+        57: ifeq          283
+        60: aload_0
+        61: invokevirtual #412                // Method checkIfPausedAndHandleAccordingly:()V
+        64: aload_1
+        65: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+        68: ifne          109
+        71: aload_2
+        72: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+        75: ifne          109
+        78: aload_0
+        79: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        82: getfield      #417                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.receiveInProgress:Ljava/util/concurrent/atomic/AtomicBoolean;
+        85: iconst_1
+        86: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+        89: aload_0
+        90: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        93: invokevirtual #423                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.isPaused:()Z
+        96: ifne          109
+        99: aload_0
+       100: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       103: invokeinterface #426,  1          // InterfaceMethod org/apache/pulsar/client/api/Consumer.batchReceive:()Lorg/apache/pulsar/client/api/Messages;
+       108: astore_3
+       109: aload_0
+       110: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       113: getfield      #417                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.receiveInProgress:Ljava/util/concurrent/atomic/AtomicBoolean;
+       116: iconst_0
+       117: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       120: goto          205
+       123: astore        5
+       125: aload         5
+       127: invokevirtual #434                // Method org/apache/pulsar/client/api/PulsarClientException.getCause:()Ljava/lang/Throwable;
+       130: instanceof    #438                // class java/lang/InterruptedException
+       133: ifeq          156
+       136: aload_0
+       137: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       140: invokestatic  #440                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$200:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+       143: aload         5
+       145: invokedynamic #443,  0            // InvokeDynamic #7:get:()Ljava/util/function/Supplier;
+       150: invokevirtual #444                // Method org/springframework/core/log/LogAccessor.debug:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+       153: goto          173
+       156: aload_0
+       157: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       160: invokestatic  #447                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$300:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+       163: aload         5
+       165: invokedynamic #450,  0            // InvokeDynamic #8:get:()Ljava/util/function/Supplier;
+       170: invokevirtual #216                // Method org/springframework/core/log/LogAccessor.error:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+       173: aconst_null
+       174: astore_3
+       175: aload_0
+       176: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       179: getfield      #417                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.receiveInProgress:Ljava/util/concurrent/atomic/AtomicBoolean;
+       182: iconst_0
+       183: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       186: goto          205
+       189: astore        6
+       191: aload_0
+       192: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       195: getfield      #417                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.receiveInProgress:Ljava/util/concurrent/atomic/AtomicBoolean;
+       198: iconst_0
+       199: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       202: aload         6
+       204: athrow
+       205: aload_3
+       206: ifnonnull     212
+       209: goto          50
+       212: aload_0
+       213: getfield      #30                 // Field isBatchListener:Z
+       216: ifeq          274
+       219: aload_1
+       220: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+       223: ifne          260
+       226: aload_2
+       227: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+       230: ifne          260
+       233: new           #159                // class java/util/ArrayList
+       236: dup
+       237: invokespecial #161                // Method java/util/ArrayList."<init>":()V
+       240: astore        4
+       242: aload_3
+       243: aload         4
+       245: dup
+       246: invokestatic  #451                // Method java/util/Objects.requireNonNull:(Ljava/lang/Object;)Ljava/lang/Object;
+       249: pop
+       250: invokedynamic #456,  0            // InvokeDynamic #9:accept:(Ljava/util/List;)Ljava/util/function/Consumer;
+       255: invokeinterface #460,  2          // InterfaceMethod org/apache/pulsar/client/api/Messages.forEach:(Ljava/util/function/Consumer;)V
+       260: aload_0
+       261: aload_3
+       262: aload         4
+       264: aload_1
+       265: aload_2
+       266: invokevirtual #466                // Method invokeBatchListener:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/List;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;)Ljava/util/List;
+       269: astore        4
+       271: goto          50
+       274: aload_0
+       275: aload_3
+       276: aload_1
+       277: invokevirtual #470                // Method invokeRecordListener:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+       280: goto          50
+       283: return
+      Exception table:
+         from    to  target type
+            64   109   123   Class org/apache/pulsar/client/api/PulsarClientException
+            64   109   189   any
+           123   175   189   any
+           189   191   189   any
+
+  public void pause();
+    Code:
+         0: aload_0
+         1: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+         4: ifnull        16
+         7: aload_0
+         8: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        11: invokeinterface #474,  1          // InterfaceMethod org/apache/pulsar/client/api/Consumer.pause:()V
+        16: return
+
+  public void resume();
+    Code:
+         0: aload_0
+         1: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+         4: ifnull        16
+         7: aload_0
+         8: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        11: invokeinterface #477,  1          // InterfaceMethod org/apache/pulsar/client/api/Consumer.resume:()V
+        16: return
+
+  private void checkIfPausedAndHandleAccordingly();
+    Code:
+         0: aload_0
+         1: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+         4: invokevirtual #423                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.isPaused:()Z
+         7: ifeq          76
+        10: aload_0
+        11: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        14: getfield      #480                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.lockOnPause:Ljava/util/concurrent/locks/Lock;
+        17: invokeinterface #484,  1          // InterfaceMethod java/util/concurrent/locks/Lock.lock:()V
+        22: aload_0
+        23: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        26: getfield      #489                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.pausedCondition:Ljava/util/concurrent/locks/Condition;
+        29: invokeinterface #493,  1          // InterfaceMethod java/util/concurrent/locks/Condition.await:()V
+        34: aload_0
+        35: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        38: getfield      #480                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.lockOnPause:Ljava/util/concurrent/locks/Lock;
+        41: invokeinterface #498,  1          // InterfaceMethod java/util/concurrent/locks/Lock.unlock:()V
+        46: goto          76
+        49: astore_1
+        50: new           #501                // class java/lang/IllegalStateException
+        53: dup
+        54: ldc_w         #503                // String Exception occurred trying to wake up the paused listener thread.
+        57: invokespecial #505                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;)V
+        60: athrow
+        61: astore_2
+        62: aload_0
+        63: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        66: getfield      #480                // Field org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.lockOnPause:Ljava/util/concurrent/locks/Lock;
+        69: invokeinterface #498,  1          // InterfaceMethod java/util/concurrent/locks/Lock.unlock:()V
+        74: aload_2
+        75: athrow
+        76: return
+      Exception table:
+         from    to  target type
+            22    34    49   Class java/lang/InterruptedException
+            22    34    61   any
+            49    62    61   any
+
+  private boolean transactional();
+    Code:
+         0: aload_0
+         1: getfield      #81                 // Field transactionTemplate:Lorg/springframework/transaction/support/TransactionTemplate;
+         4: ifnull        18
+         7: aload_0
+         8: getfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        11: ifnull        18
+        14: iconst_1
+        15: goto          19
+        18: iconst_0
+        19: ireturn
+
+  private void invokeRecordListener(org.apache.pulsar.client.api.Messages<T>, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: invokevirtual #508                // Method transactional:()Z
+         4: ifne          16
+         7: aload_0
+         8: aload_1
+         9: aload_2
+        10: invokevirtual #511                // Method doInvokeRecordListener:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+        13: goto          22
+        16: aload_0
+        17: aload_1
+        18: aload_2
+        19: invokevirtual #514                // Method invokeRecordListenerInTx:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+        22: return
+
+  private void doInvokeRecordListener(org.apache.pulsar.client.api.Messages<T>, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_1
+         1: invokeinterface #517,  1          // InterfaceMethod org/apache/pulsar/client/api/Messages.iterator:()Ljava/util/Iterator;
+         6: astore_3
+         7: aload_3
+         8: invokeinterface #521,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        13: ifeq          58
+        16: aload_3
+        17: invokeinterface #526,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        22: checkcast     #530                // class org/apache/pulsar/client/api/Message
+        25: astore        4
+        27: aload_0
+        28: aload         4
+        30: invokevirtual #532                // Method newObservation:(Lorg/apache/pulsar/client/api/Message;)Lio/micrometer/observation/Observation;
+        33: aload_0
+        34: aload         4
+        36: aload_2
+        37: invokedynamic #536,  0            // InvokeDynamic #10:get:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener;Lorg/apache/pulsar/client/api/Message;Ljava/util/concurrent/atomic/AtomicBoolean;)Ljava/util/function/Supplier;
+        42: invokeinterface #539,  2          // InterfaceMethod io/micrometer/observation/Observation.observe:(Ljava/util/function/Supplier;)Ljava/lang/Object;
+        47: pop
+        48: aload_2
+        49: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+        52: ifne          27
+        55: goto          7
+        58: aload_0
+        59: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        62: getstatic     #227                // Field org/springframework/pulsar/listener/AckMode.BATCH:Lorg/springframework/pulsar/listener/AckMode;
+        65: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        68: ifeq          77
+        71: aload_0
+        72: aload_1
+        73: aconst_null
+        74: invokevirtual #548                // Method handleBatchAcksForRecordListener:(Lorg/apache/pulsar/client/api/Messages;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        77: return
+
+  private void invokeRecordListenerInTx(org.apache.pulsar.client.api.Messages<T>, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_1
+         1: invokeinterface #517,  1          // InterfaceMethod org/apache/pulsar/client/api/Messages.iterator:()Ljava/util/Iterator;
+         6: astore_3
+         7: aload_3
+         8: invokeinterface #521,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        13: ifeq          57
+        16: aload_3
+        17: invokeinterface #526,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        22: checkcast     #530                // class org/apache/pulsar/client/api/Message
+        25: astore        4
+        27: aload_0
+        28: aload         4
+        30: invokevirtual #532                // Method newObservation:(Lorg/apache/pulsar/client/api/Message;)Lio/micrometer/observation/Observation;
+        33: aload_0
+        34: aload         4
+        36: aload_2
+        37: invokedynamic #552,  0            // InvokeDynamic #11:run:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener;Lorg/apache/pulsar/client/api/Message;Ljava/util/concurrent/atomic/AtomicBoolean;)Ljava/lang/Runnable;
+        42: invokeinterface #556,  2          // InterfaceMethod io/micrometer/observation/Observation.observe:(Ljava/lang/Runnable;)V
+        47: aload_2
+        48: invokevirtual #415                // Method java/util/concurrent/atomic/AtomicBoolean.get:()Z
+        51: ifne          27
+        54: goto          7
+        57: return
+
+  private io.micrometer.observation.Observation newObservation(org.apache.pulsar.client.api.Message<T>);
+    Code:
+         0: aload_0
+         1: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+         4: invokevirtual #559                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getObservationRegistry:()Lio/micrometer/observation/ObservationRegistry;
+         7: ifnonnull     14
+        10: getstatic     #563                // Field io/micrometer/observation/Observation.NOOP:Lio/micrometer/observation/Observation;
+        13: areturn
+        14: getstatic     #567                // Field org/springframework/pulsar/observation/PulsarListenerObservation.LISTENER_OBSERVATION:Lorg/springframework/pulsar/observation/PulsarListenerObservation;
+        17: aload_0
+        18: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        21: invokevirtual #573                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getObservationConvention:()Lorg/springframework/pulsar/observation/PulsarListenerObservationConvention;
+        24: getstatic     #577                // Field org/springframework/pulsar/observation/DefaultPulsarListenerObservationConvention.INSTANCE:Lorg/springframework/pulsar/observation/DefaultPulsarListenerObservationConvention;
+        27: aload_0
+        28: aload_1
+        29: invokedynamic #583,  0            // InvokeDynamic #12:get:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener;Lorg/apache/pulsar/client/api/Message;)Ljava/util/function/Supplier;
+        34: aload_0
+        35: getfield      #20                 // Field containerProperties:Lorg/springframework/pulsar/listener/PulsarContainerProperties;
+        38: invokevirtual #559                // Method org/springframework/pulsar/listener/PulsarContainerProperties.getObservationRegistry:()Lio/micrometer/observation/ObservationRegistry;
+        41: invokevirtual #586                // Method org/springframework/pulsar/observation/PulsarListenerObservation.observation:(Lio/micrometer/observation/ObservationConvention;Lio/micrometer/observation/ObservationConvention;Ljava/util/function/Supplier;Lio/micrometer/observation/ObservationRegistry;)Lio/micrometer/observation/Observation;
+        44: areturn
+
+  private void dispatchMessageToListenerInTxn(org.apache.pulsar.client.api.Message<T>, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: getfield      #81                 // Field transactionTemplate:Lorg/springframework/transaction/support/TransactionTemplate;
+         4: new           #590                // class org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener$1
+         7: dup
+         8: aload_0
+         9: aload_1
+        10: aload_2
+        11: invokespecial #592                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener$1."<init>":(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener;Lorg/apache/pulsar/client/api/Message;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+        14: invokevirtual #595                // Method org/springframework/transaction/support/TransactionTemplate.execute:(Lorg/springframework/transaction/support/TransactionCallback;)Ljava/lang/Object;
+        17: pop
+        18: goto          36
+        21: astore_3
+        22: aload_0
+        23: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        26: invokestatic  #601                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$400:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+        29: aload_3
+        30: ldc_w         #604                // String Transaction rolled back
+        33: invokevirtual #606                // Method org/springframework/core/log/LogAccessor.error:(Ljava/lang/Throwable;Ljava/lang/CharSequence;)V
+        36: return
+      Exception table:
+         from    to  target type
+             0    18    21   Class java/lang/Throwable
+
+  private org.apache.pulsar.client.api.transaction.Transaction getTransaction();
+    Code:
+         0: aload_0
+         1: getfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+         4: ifnonnull     9
+         7: aconst_null
+         8: areturn
+         9: aload_0
+        10: getfield      #73                 // Field transactionManager:Lorg/springframework/pulsar/transaction/PulsarAwareTransactionManager;
+        13: invokeinterface #609,  1          // InterfaceMethod org/springframework/pulsar/transaction/PulsarAwareTransactionManager.getPulsarClient:()Lorg/apache/pulsar/client/api/PulsarClient;
+        18: invokestatic  #615                // Method org/springframework/pulsar/transaction/PulsarTransactionUtils.getResourceHolder:(Lorg/apache/pulsar/client/api/PulsarClient;)Lorg/springframework/pulsar/transaction/PulsarResourceHolder;
+        21: astore_1
+        22: aload_1
+        23: invokevirtual #621                // Method org/springframework/pulsar/transaction/PulsarResourceHolder.getTransaction:()Lorg/apache/pulsar/client/api/transaction/Transaction;
+        26: areturn
+
+  private java.lang.RuntimeException dispatchMessageToListener(org.apache.pulsar.client.api.Message<T>, java.util.concurrent.atomic.AtomicBoolean, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_0
+         1: getfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+         4: instanceof    #627                // class org/springframework/pulsar/listener/PulsarAcknowledgingMessageListener
+         7: ifeq          57
+        10: aload_0
+        11: getfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+        14: aload_0
+        15: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        18: aload_1
+        19: aload_0
+        20: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        23: getstatic     #629                // Field org/springframework/pulsar/listener/AckMode.MANUAL:Lorg/springframework/pulsar/listener/AckMode;
+        26: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        29: ifeq          48
+        32: new           #632                // class org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$ConsumerAcknowledgment
+        35: dup
+        36: aload_0
+        37: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        40: aload_1
+        41: aload_3
+        42: invokespecial #634                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$ConsumerAcknowledgment."<init>":(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        45: goto          49
+        48: aconst_null
+        49: invokeinterface #637,  4          // InterfaceMethod org/springframework/pulsar/listener/PulsarRecordMessageListener.received:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;Lorg/springframework/pulsar/listener/Acknowledgement;)V
+        54: goto          78
+        57: aload_0
+        58: getfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+        61: ifnull        78
+        64: aload_0
+        65: getfield      #91                 // Field listener:Lorg/springframework/pulsar/listener/PulsarRecordMessageListener;
+        68: aload_0
+        69: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        72: aload_1
+        73: invokeinterface #641,  3          // InterfaceMethod org/springframework/pulsar/listener/PulsarRecordMessageListener.received:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;)V
+        78: aload_0
+        79: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        82: getstatic     #234                // Field org/springframework/pulsar/listener/AckMode.RECORD:Lorg/springframework/pulsar/listener/AckMode;
+        85: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        88: ifeq          97
+        91: aload_0
+        92: aload_1
+        93: aload_3
+        94: invokevirtual #644                // Method handleAck:(Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        97: aload_2
+        98: iconst_1
+        99: iconst_0
+       100: invokevirtual #648                // Method java/util/concurrent/atomic/AtomicBoolean.compareAndSet:(ZZ)Z
+       103: pop
+       104: goto          240
+       107: astore        4
+       109: aload_0
+       110: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+       113: invokestatic  #654                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$500:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+       116: aload         4
+       118: invokedynamic #657,  0            // InvokeDynamic #13:get:()Ljava/util/function/Supplier;
+       123: invokevirtual #444                // Method org/springframework/core/log/LogAccessor.debug:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+       126: aload_0
+       127: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       130: ifnull        145
+       133: aload_0
+       134: aload_2
+       135: aload_1
+       136: aload         4
+       138: aload_3
+       139: invokevirtual #658                // Method invokeRecordListenerErrorHandler:(Ljava/util/concurrent/atomic/AtomicBoolean;Lorg/apache/pulsar/client/api/Message;Ljava/lang/Exception;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+       142: goto          237
+       145: aload_0
+       146: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+       149: getstatic     #234                // Field org/springframework/pulsar/listener/AckMode.RECORD:Lorg/springframework/pulsar/listener/AckMode;
+       152: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+       155: ifeq          171
+       158: aload_0
+       159: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       162: aload_1
+       163: invokeinterface #662,  2          // InterfaceMethod org/apache/pulsar/client/api/Consumer.negativeAcknowledge:(Lorg/apache/pulsar/client/api/Message;)V
+       168: goto          237
+       171: aload_0
+       172: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+       175: getstatic     #227                // Field org/springframework/pulsar/listener/AckMode.BATCH:Lorg/springframework/pulsar/listener/AckMode;
+       178: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+       181: ifeq          203
+       184: aload_0
+       185: getfield      #16                 // Field nackableMessages:Ljava/util/Set;
+       188: aload_1
+       189: invokeinterface #666,  1          // InterfaceMethod org/apache/pulsar/client/api/Message.getMessageId:()Lorg/apache/pulsar/client/api/MessageId;
+       194: invokeinterface #670,  2          // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+       199: pop
+       200: goto          237
+       203: new           #501                // class java/lang/IllegalStateException
+       206: dup
+       207: ldc_w         #671                // String switch to AckMode BATCH or RECORD to enable auto-nacks
+       210: iconst_1
+       211: anewarray     #8                  // class java/lang/Object
+       214: dup
+       215: iconst_0
+       216: aload_1
+       217: invokeinterface #666,  1          // InterfaceMethod org/apache/pulsar/client/api/Message.getMessageId:()Lorg/apache/pulsar/client/api/MessageId;
+       222: aastore
+       223: invokevirtual #673                // Method java/lang/String.formatted:([Ljava/lang/Object;)Ljava/lang/String;
+       226: invokedynamic #677,  0            // InvokeDynamic #14:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+       231: aload         4
+       233: invokespecial #681                // Method java/lang/IllegalStateException."<init>":(Ljava/lang/String;Ljava/lang/Throwable;)V
+       236: athrow
+       237: aload         4
+       239: areturn
+       240: aconst_null
+       241: areturn
+      Exception table:
+         from    to  target type
+             0   104   107   Class java/lang/RuntimeException
+
+  private void invokeRecordListenerErrorHandler(java.util.concurrent.atomic.AtomicBoolean, org.apache.pulsar.client.api.Message<T>, java.lang.Exception, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_0
+         1: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+         4: aload_3
+         5: aload_2
+         6: invokeinterface #684,  3          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.shouldRetryMessage:(Ljava/lang/Exception;Lorg/apache/pulsar/client/api/Message;)Z
+        11: istore        5
+        13: iload         5
+        15: ifeq          26
+        18: aload_1
+        19: iconst_1
+        20: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+        23: goto          68
+        26: aload_1
+        27: iconst_1
+        28: iconst_0
+        29: invokevirtual #648                // Method java/util/concurrent/atomic/AtomicBoolean.compareAndSet:(ZZ)Z
+        32: pop
+        33: aload_0
+        34: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+        37: aload_0
+        38: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        41: aload_2
+        42: aload_3
+        43: invokeinterface #690,  4          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.recoverMessage:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;Ljava/lang/Exception;)V
+        48: aload_0
+        49: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        52: getstatic     #234                // Field org/springframework/pulsar/listener/AckMode.RECORD:Lorg/springframework/pulsar/listener/AckMode;
+        55: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        58: ifeq          68
+        61: aload_0
+        62: aload_2
+        63: aload         4
+        65: invokevirtual #644                // Method handleAck:(Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        68: return
+
+  private java.util.List<org.apache.pulsar.client.api.Message<T>> invokeBatchListener(org.apache.pulsar.client.api.Messages<T>, java.util.List<org.apache.pulsar.client.api.Message<T>>, java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: invokevirtual #508                // Method transactional:()Z
+         4: ifne          18
+         7: aload_0
+         8: aload_1
+         9: aload_2
+        10: aload_3
+        11: aload         4
+        13: aconst_null
+        14: invokevirtual #694                // Method doInvokeBatchListener:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/List;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;Lorg/apache/pulsar/client/api/transaction/Transaction;)Ljava/util/List;
+        17: areturn
+        18: aload_0
+        19: aload_1
+        20: aload_2
+        21: aload_3
+        22: aload         4
+        24: invokevirtual #698                // Method invokeBatchListenerInTxn:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/List;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;)Ljava/util/List;
+        27: areturn
+
+  private java.util.List<org.apache.pulsar.client.api.Message<T>> invokeBatchListenerInTxn(org.apache.pulsar.client.api.Messages<T>, java.util.List<org.apache.pulsar.client.api.Message<T>>, java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: getfield      #81                 // Field transactionTemplate:Lorg/springframework/transaction/support/TransactionTemplate;
+         4: aload_0
+         5: aload_1
+         6: aload_2
+         7: aload_3
+         8: aload         4
+        10: invokedynamic #701,  0            // InvokeDynamic #15:doInTransaction:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$Listener;Lorg/apache/pulsar/client/api/Messages;Ljava/util/List;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;)Lorg/springframework/transaction/support/TransactionCallback;
+        15: invokevirtual #595                // Method org/springframework/transaction/support/TransactionTemplate.execute:(Lorg/springframework/transaction/support/TransactionCallback;)Ljava/lang/Object;
+        18: checkcast     #167                // class java/util/List
+        21: areturn
+        22: astore        5
+        24: aload_0
+        25: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        28: invokestatic  #705                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$600:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+        31: aload         5
+        33: ldc_w         #604                // String Transaction rolled back
+        36: invokevirtual #606                // Method org/springframework/core/log/LogAccessor.error:(Ljava/lang/Throwable;Ljava/lang/CharSequence;)V
+        39: invokestatic  #708                // Method java/util/Collections.emptyList:()Ljava/util/List;
+        42: areturn
+      Exception table:
+         from    to  target type
+             0    21    22   Class java/lang/Throwable
+
+  private java.util.List<org.apache.pulsar.client.api.Message<T>> doInvokeBatchListener(org.apache.pulsar.client.api.Messages<T>, java.util.List<org.apache.pulsar.client.api.Message<T>>, java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_2
+         1: invokestatic  #714                // Method org/springframework/util/CollectionUtils.isEmpty:(Ljava/util/Collection;)Z
+         4: ifne          110
+         7: aload_0
+         8: getfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+        11: instanceof    #719                // class org/springframework/pulsar/listener/PulsarBatchAcknowledgingMessageListener
+        14: ifeq          62
+        17: aload_0
+        18: getfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+        21: aload_0
+        22: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        25: aload_2
+        26: aload_0
+        27: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        30: getstatic     #629                // Field org/springframework/pulsar/listener/AckMode.MANUAL:Lorg/springframework/pulsar/listener/AckMode;
+        33: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        36: ifeq          53
+        39: new           #721                // class org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$ConsumerBatchAcknowledgment
+        42: dup
+        43: aload_0
+        44: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        47: invokespecial #723                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$ConsumerBatchAcknowledgment."<init>":(Lorg/apache/pulsar/client/api/Consumer;)V
+        50: goto          54
+        53: aconst_null
+        54: invokeinterface #725,  4          // InterfaceMethod org/springframework/pulsar/listener/PulsarBatchMessageListener.received:(Lorg/apache/pulsar/client/api/Consumer;Ljava/util/List;Lorg/springframework/pulsar/listener/Acknowledgement;)V
+        59: goto          76
+        62: aload_0
+        63: getfield      #87                 // Field batchMessageListener:Lorg/springframework/pulsar/listener/PulsarBatchMessageListener;
+        66: aload_0
+        67: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        70: aload_2
+        71: invokeinterface #728,  3          // InterfaceMethod org/springframework/pulsar/listener/PulsarBatchMessageListener.received:(Lorg/apache/pulsar/client/api/Consumer;Ljava/util/List;)V
+        76: aload_0
+        77: getfield      #37                 // Field ackMode:Lorg/springframework/pulsar/listener/AckMode;
+        80: getstatic     #227                // Field org/springframework/pulsar/listener/AckMode.BATCH:Lorg/springframework/pulsar/listener/AckMode;
+        83: invokevirtual #545                // Method org/springframework/pulsar/listener/AckMode.equals:(Ljava/lang/Object;)Z
+        86: ifeq          96
+        89: aload_0
+        90: aload_1
+        91: aload         5
+        93: invokevirtual #731                // Method handleBatchAcks:(Lorg/apache/pulsar/client/api/Messages;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        96: aload_0
+        97: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       100: ifnull        110
+       103: aload_0
+       104: aload_3
+       105: aload         4
+       107: invokevirtual #734                // Method pendingMessagesHandledSuccessfully:(Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+       110: invokestatic  #708                // Method java/util/Collections.emptyList:()Ljava/util/List;
+       113: areturn
+       114: astore        6
+       116: aload_0
+       117: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       120: ifnull        136
+       123: aload_0
+       124: aload_3
+       125: aload         4
+       127: aload_2
+       128: aload         6
+       130: aload         5
+       132: invokevirtual #738                // Method invokeBatchListenerErrorHandler:(Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/List;Ljava/lang/Throwable;Lorg/apache/pulsar/client/api/transaction/Transaction;)Ljava/util/List;
+       135: areturn
+       136: aload_0
+       137: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       140: aload_1
+       141: invokeinterface #742,  2          // InterfaceMethod org/apache/pulsar/client/api/Consumer.negativeAcknowledge:(Lorg/apache/pulsar/client/api/Messages;)V
+       146: aload         5
+       148: ifnull        154
+       151: aload         6
+       153: athrow
+       154: invokestatic  #708                // Method java/util/Collections.emptyList:()Ljava/util/List;
+       157: areturn
+      Exception table:
+         from    to  target type
+             0   113   114   Class java/lang/RuntimeException
+
+  private java.util.List<org.apache.pulsar.client.api.Message<T>> invokeBatchListenerErrorHandler(java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean, java.util.List<org.apache.pulsar.client.api.Message<T>>, java.lang.Throwable, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload         4
+         2: instanceof    #745                // class org/springframework/pulsar/listener/PulsarBatchListenerFailedException
+         5: ifne          26
+         8: aload         4
+        10: invokevirtual #747                // Method java/lang/Throwable.getCause:()Ljava/lang/Throwable;
+        13: astore        4
+        15: ldc_w         #745                // class org/springframework/pulsar/listener/PulsarBatchListenerFailedException
+        18: aload         4
+        20: ldc_w         #748                // String Batch listener should throw PulsarBatchListenerFailedException on errors.
+        23: invokestatic  #750                // Method org/springframework/util/Assert.isInstanceOf:(Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/String;)V
+        26: aload         4
+        28: checkcast     #745                // class org/springframework/pulsar/listener/PulsarBatchListenerFailedException
+        31: astore        6
+        33: aload_0
+        34: aload         6
+        36: invokevirtual #754                // Method getPulsarMessageCausedTheException:(Lorg/springframework/pulsar/listener/PulsarBatchListenerFailedException;)Lorg/apache/pulsar/client/api/Message;
+        39: astore        7
+        41: aload_0
+        42: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+        45: invokeinterface #758,  1          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.currentMessage:()Lorg/apache/pulsar/client/api/Message;
+        50: astore        8
+        52: aload         8
+        54: ifnull        73
+        57: aload         8
+        59: aload         7
+        61: invokevirtual #762                // Method java/lang/Object.equals:(Ljava/lang/Object;)Z
+        64: ifne          73
+        67: aload_0
+        68: aload_1
+        69: aload_2
+        70: invokevirtual #734                // Method pendingMessagesHandledSuccessfully:(Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+        73: aload_3
+        74: aload         7
+        76: invokeinterface #763,  2          // InterfaceMethod java/util/List.indexOf:(Ljava/lang/Object;)I
+        81: istore        9
+        83: aload_3
+        84: iload         9
+        86: aload_3
+        87: invokeinterface #767,  1          // InterfaceMethod java/util/List.size:()I
+        92: invokeinterface #770,  3          // InterfaceMethod java/util/List.subList:(II)Ljava/util/List;
+        97: astore_3
+        98: aload_0
+        99: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       102: aload         6
+       104: aload         7
+       106: invokeinterface #684,  3          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.shouldRetryMessage:(Ljava/lang/Exception;Lorg/apache/pulsar/client/api/Message;)Z
+       111: istore        10
+       113: iload         10
+       115: ifeq          126
+       118: aload_1
+       119: iconst_1
+       120: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       123: goto          212
+       126: aload_1
+       127: iconst_1
+       128: iconst_0
+       129: invokevirtual #648                // Method java/util/concurrent/atomic/AtomicBoolean.compareAndSet:(ZZ)Z
+       132: pop
+       133: aload_0
+       134: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       137: aload_0
+       138: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+       141: aload         7
+       143: aload         6
+       145: invokeinterface #690,  4          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.recoverMessage:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;Ljava/lang/Exception;)V
+       150: aload_0
+       151: aload         7
+       153: aload         5
+       155: invokevirtual #644                // Method handleAck:(Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+       158: aload_3
+       159: invokeinterface #767,  1          // InterfaceMethod java/util/List.size:()I
+       164: iconst_1
+       165: if_icmpne     184
+       168: aload_3
+       169: iconst_0
+       170: invokeinterface #774,  2          // InterfaceMethod java/util/List.remove:(I)Ljava/lang/Object;
+       175: pop
+       176: aload_2
+       177: iconst_0
+       178: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       181: goto          203
+       184: aload_3
+       185: iconst_1
+       186: aload_3
+       187: invokeinterface #767,  1          // InterfaceMethod java/util/List.size:()I
+       192: invokeinterface #770,  3          // InterfaceMethod java/util/List.subList:(II)Ljava/util/List;
+       197: astore_3
+       198: aload_2
+       199: iconst_1
+       200: invokevirtual #421                // Method java/util/concurrent/atomic/AtomicBoolean.set:(Z)V
+       203: aload_0
+       204: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+       207: invokeinterface #777,  1          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.clearMessage:()V
+       212: aload_3
+       213: areturn
+
+  private void pendingMessagesHandledSuccessfully(java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_1
+         1: iconst_1
+         2: iconst_0
+         3: invokevirtual #648                // Method java/util/concurrent/atomic/AtomicBoolean.compareAndSet:(ZZ)Z
+         6: pop
+         7: aload_2
+         8: iconst_1
+         9: iconst_0
+        10: invokevirtual #648                // Method java/util/concurrent/atomic/AtomicBoolean.compareAndSet:(ZZ)Z
+        13: pop
+        14: aload_0
+        15: getfield      #55                 // Field pulsarConsumerErrorHandler:Lorg/springframework/pulsar/listener/PulsarConsumerErrorHandler;
+        18: invokeinterface #777,  1          // InterfaceMethod org/springframework/pulsar/listener/PulsarConsumerErrorHandler.clearMessage:()V
+        23: return
+
+  private org.apache.pulsar.client.api.Message<T> getPulsarMessageCausedTheException(org.springframework.pulsar.listener.PulsarBatchListenerFailedException);
+    Code:
+         0: aload_1
+         1: invokevirtual #780                // Method org/springframework/pulsar/listener/PulsarBatchListenerFailedException.getMessageInError:()Ljava/lang/Object;
+         4: checkcast     #530                // class org/apache/pulsar/client/api/Message
+         7: areturn
+
+  private boolean isSharedSubscriptionType();
+    Code:
+         0: aload_0
+         1: getfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+         4: ifnull        37
+         7: aload_0
+         8: getfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+        11: getstatic     #783                // Field org/apache/pulsar/client/api/SubscriptionType.Shared:Lorg/apache/pulsar/client/api/SubscriptionType;
+        14: invokevirtual #788                // Method org/apache/pulsar/client/api/SubscriptionType.equals:(Ljava/lang/Object;)Z
+        17: ifne          33
+        20: aload_0
+        21: getfield      #45                 // Field subscriptionType:Lorg/apache/pulsar/client/api/SubscriptionType;
+        24: getstatic     #789                // Field org/apache/pulsar/client/api/SubscriptionType.Key_Shared:Lorg/apache/pulsar/client/api/SubscriptionType;
+        27: invokevirtual #788                // Method org/apache/pulsar/client/api/SubscriptionType.equals:(Ljava/lang/Object;)Z
+        30: ifeq          37
+        33: iconst_1
+        34: goto          38
+        37: iconst_0
+        38: ireturn
+
+  private void handleBatchAcksForRecordListener(org.apache.pulsar.client.api.Messages<T>, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_0
+         1: getfield      #16                 // Field nackableMessages:Ljava/util/Set;
+         4: invokeinterface #346,  1          // InterfaceMethod java/util/Set.isEmpty:()Z
+         9: ifeq          21
+        12: aload_0
+        13: aload_1
+        14: aload_2
+        15: invokevirtual #731                // Method handleBatchAcks:(Lorg/apache/pulsar/client/api/Messages;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        18: goto          108
+        21: aload_1
+        22: invokeinterface #517,  1          // InterfaceMethod org/apache/pulsar/client/api/Messages.iterator:()Ljava/util/Iterator;
+        27: astore_3
+        28: aload_3
+        29: invokeinterface #521,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        34: ifeq          108
+        37: aload_3
+        38: invokeinterface #526,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        43: checkcast     #530                // class org/apache/pulsar/client/api/Message
+        46: astore        4
+        48: aload_0
+        49: getfield      #16                 // Field nackableMessages:Ljava/util/Set;
+        52: aload         4
+        54: invokeinterface #666,  1          // InterfaceMethod org/apache/pulsar/client/api/Message.getMessageId:()Lorg/apache/pulsar/client/api/MessageId;
+        59: invokeinterface #792,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+        64: ifeq          98
+        67: aload_0
+        68: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        71: aload         4
+        73: invokeinterface #662,  2          // InterfaceMethod org/apache/pulsar/client/api/Consumer.negativeAcknowledge:(Lorg/apache/pulsar/client/api/Message;)V
+        78: aload_0
+        79: getfield      #16                 // Field nackableMessages:Ljava/util/Set;
+        82: aload         4
+        84: invokeinterface #666,  1          // InterfaceMethod org/apache/pulsar/client/api/Message.getMessageId:()Lorg/apache/pulsar/client/api/MessageId;
+        89: invokeinterface #795,  2          // InterfaceMethod java/util/Set.remove:(Ljava/lang/Object;)Z
+        94: pop
+        95: goto          105
+        98: aload_0
+        99: aload         4
+       101: aload_2
+       102: invokevirtual #644                // Method handleAck:(Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+       105: goto          28
+       108: return
+
+  private void handleBatchAcks(org.apache.pulsar.client.api.Messages<T>, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_1
+         1: invokeinterface #797,  1          // InterfaceMethod org/apache/pulsar/client/api/Messages.size:()I
+         6: ifgt          10
+         9: return
+        10: aload_0
+        11: invokevirtual #798                // Method isSharedSubscriptionType:()Z
+        14: ifeq          29
+        17: aload_0
+        18: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        21: aload_1
+        22: aload_2
+        23: invokestatic  #801                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$AckUtils.handleAck:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Messages;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        26: goto          70
+        29: aload_1
+        30: invokeinterface #806,  1          // InterfaceMethod org/apache/pulsar/client/api/Messages.spliterator:()Ljava/util/Spliterator;
+        35: iconst_1
+        36: invokestatic  #810                // Method java/util/stream/StreamSupport.stream:(Ljava/util/Spliterator;Z)Ljava/util/stream/Stream;
+        39: astore_3
+        40: aload_3
+        41: invokedynamic #815,  0            // InvokeDynamic #16:apply:()Ljava/util/function/BinaryOperator;
+        46: invokeinterface #816,  2          // InterfaceMethod java/util/stream/Stream.reduce:(Ljava/util/function/BinaryOperator;)Ljava/util/Optional;
+        51: aconst_null
+        52: invokevirtual #820                // Method java/util/Optional.orElse:(Ljava/lang/Object;)Ljava/lang/Object;
+        55: checkcast     #530                // class org/apache/pulsar/client/api/Message
+        58: astore        4
+        60: aload_0
+        61: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        64: aload         4
+        66: aload_2
+        67: invokestatic  #825                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$AckUtils.handleAckCumulative:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/Message;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        70: goto          101
+        73: astore_3
+        74: aload_0
+        75: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+        78: invokestatic  #828                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.access$700:(Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;)Lorg/springframework/core/log/LogAccessor;
+        81: aload_3
+        82: aload_3
+        83: invokedynamic #831,  0            // InvokeDynamic #17:get:(Lorg/springframework/pulsar/PulsarException;)Ljava/util/function/Supplier;
+        88: invokevirtual #834                // Method org/springframework/core/log/LogAccessor.warn:(Ljava/lang/Throwable;Ljava/util/function/Supplier;)V
+        91: aload_0
+        92: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+        95: aload_1
+        96: invokeinterface #742,  2          // InterfaceMethod org/apache/pulsar/client/api/Consumer.negativeAcknowledge:(Lorg/apache/pulsar/client/api/Messages;)V
+       101: return
+      Exception table:
+         from    to  target type
+            10    70    73   Class org/springframework/pulsar/PulsarException
+
+  private void handleAck(org.apache.pulsar.client.api.Message<T>, org.apache.pulsar.client.api.transaction.Transaction);
+    Code:
+         0: aload_0
+         1: getfield      #190                // Field consumer:Lorg/apache/pulsar/client/api/Consumer;
+         4: aload_1
+         5: invokeinterface #666,  1          // InterfaceMethod org/apache/pulsar/client/api/Message.getMessageId:()Lorg/apache/pulsar/client/api/MessageId;
+        10: aload_2
+        11: invokestatic  #837                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer$AckUtils.handleAckWithNackOnFailure:(Lorg/apache/pulsar/client/api/Consumer;Lorg/apache/pulsar/client/api/MessageId;Lorg/apache/pulsar/client/api/transaction/Transaction;)V
+        14: return
+
+  private static java.lang.CharSequence lambda$handleBatchAcks$13(org.springframework.pulsar.PulsarException);
+    Code:
+         0: aload_0
+         1: invokevirtual #841                // Method org/springframework/pulsar/PulsarException.getMessage:()Ljava/lang/String;
+         4: invokedynamic #844,  0            // InvokeDynamic #18:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+         9: areturn
+
+  private static org.apache.pulsar.client.api.Message lambda$handleBatchAcks$12(org.apache.pulsar.client.api.Message, org.apache.pulsar.client.api.Message);
+    Code:
+         0: aload_1
+         1: areturn
+
+  private java.util.List lambda$invokeBatchListenerInTxn$11(org.apache.pulsar.client.api.Messages, java.util.List, java.util.concurrent.atomic.AtomicBoolean, java.util.concurrent.atomic.AtomicBoolean, org.springframework.transaction.TransactionStatus);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: aload_3
+         4: aload         4
+         6: aload_0
+         7: invokevirtual #845                // Method getTransaction:()Lorg/apache/pulsar/client/api/transaction/Transaction;
+        10: invokevirtual #694                // Method doInvokeBatchListener:(Lorg/apache/pulsar/client/api/Messages;Ljava/util/List;Ljava/util/concurrent/atomic/AtomicBoolean;Ljava/util/concurrent/atomic/AtomicBoolean;Lorg/apache/pulsar/client/api/transaction/Transaction;)Ljava/util/List;
+        13: areturn
+
+  private static java.lang.CharSequence lambda$dispatchMessageToListener$10();
+    Code:
+         0: ldc_w         #846                // String Error dispatching the message to the listener.
+         3: areturn
+
+  private org.springframework.pulsar.observation.PulsarMessageReceiverContext lambda$newObservation$9(org.apache.pulsar.client.api.Message);
+    Code:
+         0: new           #848                // class org/springframework/pulsar/observation/PulsarMessageReceiverContext
+         3: dup
+         4: aload_1
+         5: aload_0
+         6: getfield      #1                  // Field this$0:Lorg/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer;
+         9: invokevirtual #850                // Method org/springframework/pulsar/listener/DefaultPulsarMessageListenerContainer.getBeanName:()Ljava/lang/String;
+        12: invokespecial #853                // Method org/springframework/pulsar/observation/PulsarMessageReceiverContext."<init>":(Lorg/apache/pulsar/client/api/Message;Ljava/lang/String;)V
+        15: areturn
+
+  private void lambda$invokeRecordListenerInTx$8(org.apache.pulsar.client.api.Message, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: invokevirtual #856                // Method dispatchMessageToListenerInTxn:(Lorg/apache/pulsar/client/api/Message;Ljava/util/concurrent/atomic/AtomicBoolean;)V
+         6: return
+
+  private java.lang.RuntimeException lambda$doInvokeRecordListener$7(org.apache.pulsar.client.api.Message, java.util.concurrent.atomic.AtomicBoolean);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: aload_2
+         3: aconst_null
+         4: invokevirtual #860                // Method dispatchMessageToListener:(Lorg/apache/pulsar/client/api/Message;Ljava/util/concurrent/atomic/AtomicBoolean;Lorg/apache/pulsar/client/api/transaction/Transaction;)Ljava/lang/RuntimeException;
+         7: areturn
+
+  private static java.lang.CharSequence lambda$run$6();
+    Code:
+         0: ldc_w         #864                // String Error receiving messages.
+         3: areturn
+
+  private static java.lang.CharSequence lambda$run$5();
+    Code:
+         0: ldc_w         #866                // String Error receiving messages due to a thread interrupt call from upstream.
+         3: areturn
+
+  private static java.lang.Object lambda$extractDirectConsumerProperties$4(java.lang.Object, java.lang.Object);
+    Code:
+         0: aload_1
+         1: areturn
+
+  private static java.lang.String lambda$extractDirectConsumerProperties$3(java.util.Map$Entry);
+    Code:
+         0: aload_0
+         1: invokeinterface #868,  1          // InterfaceMethod java/util/Map$Entry.getKey:()Ljava/lang/Object;
+         6: invokestatic  #873                // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+         9: areturn
+
+  private static java.lang.CharSequence lambda$updateSubscriptionTypeFromConsumer$2(java.lang.Exception);
+    Code:
+         0: aload_0
+         1: invokevirtual #877                // Method java/lang/Exception.getMessage:()Ljava/lang/String;
+         4: invokedynamic #878,  0            // InvokeDynamic #19:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+         9: areturn
+
+  private static java.lang.CharSequence lambda$new$1();
+    Code:
+         0: ldc_w         #879                // String Pulsar exception.
+         3: areturn
+
+  private static void lambda$new$0(java.util.Map, org.apache.pulsar.client.api.BatchReceivePolicy, org.apache.pulsar.client.api.ConsumerBuilder);
+    Code:
+         0: aload_2
+         1: aload_0
+         2: invokestatic  #881                // Method org/springframework/pulsar/core/ConsumerBuilderConfigurationUtil.loadConf:(Lorg/apache/pulsar/client/api/ConsumerBuilder;Ljava/util/Map;)V
+         5: aload_2
+         6: aload_1
+         7: invokeinterface #887,  2          // InterfaceMethod org/apache/pulsar/client/api/ConsumerBuilder.batchReceivePolicy:(Lorg/apache/pulsar/client/api/BatchReceivePolicy;)Lorg/apache/pulsar/client/api/ConsumerBuilder;
+        12: pop
+        13: return
+}

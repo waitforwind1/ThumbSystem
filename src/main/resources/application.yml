@@ -1,6 +1,11 @@
 spring:
   application:
     name: Thumbs
+  pulsar:
+    client:
+      service-url: pulsar://localhost:6650
+    admin:
+      service-url: http://localhost:8081
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${MYSQL_USER}
@@ -14,6 +19,7 @@ spring:
       host: localhost
       port: 6379
       connect-timeout: 5000ms
+
 
 mybatis-plus:
   configuration:

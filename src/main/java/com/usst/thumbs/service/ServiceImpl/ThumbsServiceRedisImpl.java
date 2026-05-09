@@ -38,7 +38,7 @@ import static com.usst.thumbs.common.ThumbsConstant.UN_THUMB_CONSTANT;
 */
 
 // 这个类是第二节的实现  是为了缓解数据库的写压力 是通过在写的时候建立一个以时间片为标志的临时记录，存储到redis中，同时写点赞和取消点赞的脚本，定期执行同步到数据库
-@Service("thumbsService")
+@Service("thumbsServiceRedis")
 public class ThumbsServiceRedisImpl extends ServiceImpl<ThumbsMapper, Thumbs>
     implements ThumbsService{
 

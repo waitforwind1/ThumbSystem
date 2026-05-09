@@ -7,7 +7,6 @@ import com.usst.thumbs.utils.RedisKeyUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -28,7 +27,7 @@ public class SyncThumb2DBCompensatoryJob {
     @Resource
     private SyncThumb2DBJob syncThumb2DBJob;
 
-    @Scheduled(cron = "0 0 2 * * *")
+//    @Scheduled(cron = "0 0 2 * * *")
     public void run() {
         log.info("开始补偿数据");
         Set<String> thumbKeys = redisTemplate.keys(RedisKeyUtil.getTempThumbsKey("") + "*");

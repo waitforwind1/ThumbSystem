@@ -1,0 +1,15 @@
+services:
+  pulsar:
+    image: apachepulsar/pulsar:3.2.4
+    container_name: thumbs-pulsar
+    command: bin/pulsar standalone
+    environment:
+      PULSAR_PREFIX_advertisedAddress: localhost
+    ports:
+      - "6650:6650"
+      - "8081:8080"
+    volumes:
+      - pulsar-data:/pulsar/data
+
+volumes:
+  pulsar-data:

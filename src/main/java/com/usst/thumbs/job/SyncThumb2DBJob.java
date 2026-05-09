@@ -10,7 +10,6 @@ import com.usst.thumbs.utils.RedisKeyUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,7 @@ import java.util.Map;
 @Component
 @Slf4j
 public class SyncThumb2DBJob {
-    @Resource
+    @Resource(name = "thumbService")
     private ThumbsService thumbsService;
 
     @Resource
@@ -33,7 +32,7 @@ public class SyncThumb2DBJob {
     @Resource
     private RedisTemplate<String,Object> redisTemplate;
 
-    @Scheduled(fixedRate = 10000)
+//    @Scheduled(fixedRate = 10000)
     @Transactional(rollbackFor = Exception.class)
     public void run() {
         log.info("开始执行");
