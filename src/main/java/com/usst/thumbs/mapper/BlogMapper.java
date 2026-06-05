@@ -16,6 +16,9 @@ import java.util.Map;
 @Mapper
 public interface BlogMapper extends BaseMapper<Blog> {
     void batchUpdateThumbCount(@Param("countMap")Map<Long,Long> countMap);
+    void batchUpdateFavoriteCount(@Param("countMap")Map<Long,Long> countMap);
+    void batchUpdateCommentCount(@Param("countMap")Map<Long,Long> countMap);
+
 }
 
 

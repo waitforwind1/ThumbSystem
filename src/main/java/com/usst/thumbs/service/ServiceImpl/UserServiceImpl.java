@@ -1,10 +1,15 @@
 package com.usst.thumbs.service.ServiceImpl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.usst.thumbs.common.UserConstant;
 import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.UserMapper;
+import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.User;
+import com.usst.thumbs.model.request.UserUpdateRequest;
+import com.usst.thumbs.model.vo.UserProfileVO;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,9 +30,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String SALT = "kyrie";
 
     private final UserMapper userMapper;
+    private final BlogMapper blogMapper;
 
-    public UserServiceImpl(UserMapper userMapper) {
+    public UserServiceImpl(UserMapper userMapper, BlogMapper blogMapper) {
         this.userMapper = userMapper;
+        this.blogMapper = blogMapper;
     }
 
 
@@ -49,9 +56,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
             throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
-        QueryWrapper queryWrapper= new QueryWrapper();
-        queryWrapper.eq("account",account);
-        if(userMapper.selectOne(queryWrapper)!=null)
+        User one = this.lambdaQuery().eq(User::getAccount, account).one();
+        if(one!=null)
             throw new BusinessException(ResultType.USER_ACCOUNT_EXISTS,"账号已存在");
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT+password).getBytes(StandardCharsets.UTF_8));
         User user = new User();
@@ -77,34 +83,96 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
             throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
+
         String newPassword = DigestUtils.md5DigestAsHex((SALT+password).getBytes(StandardCharsets.UTF_8));
-        QueryWrapper queryWrapper= new QueryWrapper();
-        queryWrapper.eq("account",account);
-        queryWrapper.eq("password",newPassword);
-        User user = userMapper.selectOne(queryWrapper);
+        User user = this.lambdaQuery().eq(User::getAccount, account).eq(User::getPassword, newPassword).one();
         if(user==null)
             throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
+        if(user.getStatus().equals(UserConstant.USER_IS_BAN))
+            throw new BusinessException(ResultType.NO_AUTH,"用户已被封禁,找管理员解封");
         User safeUser = getsafeUser(user);
         request.getSession().setAttribute(USER_LOGIN_STATE,safeUser);
         return safeUser;
     }
 
-    @Override
-    public User login(Long userId,HttpServletRequest request){
-        if(userId==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"请求参数不能为空");
-        User user = this.getById(userId);
-        if(user==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"用户不存在");
-        User safeUser = getsafeUser(user);
-        request.getSession().setAttribute(USER_LOGIN_STATE, safeUser);
-        return safeUser;
-    }
 
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATE);
-        return user;
+        Object object = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if(object instanceof User user){
+            return user;
+        }
+        throw new BusinessException(ResultType.NOT_LOGIN,"用户未登录");
+    }
+
+    @Override
+    public Boolean logout(HttpServletRequest request) {
+        if(request==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        request.getSession().invalidate();
+        return true;
+    }
+
+    @Override
+    public Boolean updateUser(UserUpdateRequest request, HttpServletRequest httpServletRequest) {
+        User loginUser = getLoginUser(httpServletRequest);
+        String newUserName = request.getNewUserName()==null?loginUser.getUsername():request.getNewUserName();
+        String newAvatar = request.getNewAvatar()==null? loginUser.getAvatar() : request.getNewAvatar();
+        boolean updated = this.lambdaUpdate()
+                .eq(User::getId, loginUser.getId())
+                .set(User::getUsername, newUserName)
+                .set(User::getAvatar, newAvatar)
+                .update();
+        if(!updated)
+            throw new BusinessException(ResultType.DATABASE_ERROR,"更新失败");
+        User newUser = this.getById(loginUser.getId());
+        httpServletRequest.getSession().setAttribute(USER_LOGIN_STATE,getsafeUser(newUser));
+        return true;
+    }
+
+    /**
+     * 获取用户信息
+     * @param userId
+     * @return
+     */
+    @Override
+    public UserProfileVO getUserProfile(Long userId) {
+        if(userId==null || userId<=0)
+            throw new BusinessException(ResultType.PARAM_ERROR,"用户ID不合法");
+        User user = this.getById(userId);
+        if(user==null)
+            throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
+        Long blogCount = blogMapper.selectCount(new LambdaQueryWrapper<Blog>()
+                .eq(Blog::getUserId, user.getId()));
+        return UserProfileVO.builder()
+                .id(user.getId())
+                .userName(user.getUsername())
+                .avatar(user.getAvatar())
+                .account(user.getAccount())
+                .blogCount(blogCount)
+                .createTime(user.getCreateTime())
+                .build();
+    }
+
+    @Override
+    public Boolean banUser(Long userId, HttpServletRequest request) {
+        User loginUser = getLoginUser(request);
+        if(!loginUser.getIsAdmin().equals(UserConstant.USER_IS_ADMIN))
+            throw new BusinessException(ResultType.NO_AUTH,"无权限");
+        if(userId==null || userId<=0)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数不合法");
+        return this.lambdaUpdate().eq(User::getId, userId).set(User::getStatus, UserConstant.USER_IS_BAN).update();
+    }
+
+    @Override
+    public Boolean unBanUser(Long userId, HttpServletRequest request) {
+        User loginUser = getLoginUser(request);
+        if(!loginUser.getIsAdmin().equals(UserConstant.USER_IS_ADMIN))
+            throw new BusinessException(ResultType.NO_AUTH,"无权限");
+        if(userId==null || userId<=0)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数不合法");
+        return this.lambdaUpdate().eq(User::getId,userId).set(User::getStatus,UserConstant.USER_NOT_BAN).update();
     }
 
 
@@ -115,6 +183,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         safeUser.setUsername(user.getUsername());
         safeUser.setAvatar(user.getAvatar());
         safeUser.setIsAdmin(user.getIsAdmin());
+        safeUser.setStatus(user.getStatus());
         safeUser.setCreateTime(user.getCreateTime());
         safeUser.setUpdateTime(user.getUpdateTime());
         return safeUser;

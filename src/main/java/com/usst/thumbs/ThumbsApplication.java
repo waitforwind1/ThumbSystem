@@ -12,4 +12,5 @@ public class ThumbsApplication {
         SpringApplication.run(ThumbsApplication.class, args);
     }
 
+
 }

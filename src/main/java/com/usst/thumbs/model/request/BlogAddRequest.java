@@ -1,11 +1,18 @@
 package com.usst.thumbs.model.request;
 
+import lombok.Builder;
 import lombok.Data;
 
-import java.util.Date;
+import java.io.Serializable;
+import java.util.List;
 
 @Data
-public class BlogAddRequest {
+@Builder
+public class BlogAddRequest implements Serializable {
+
+    /**
+     * 文章标题
+     */
     private String title;
 
     /**
@@ -14,22 +21,11 @@ public class BlogAddRequest {
     private String content;
 
     /**
-     * 创建时间
-     */
-    private Date createtime;
-
-    /**
-     * 更新时间
-     */
-    private Date updatetime;
-
-    /**
-     * 点赞数
-     */
-    private Integer thumbcount;
-
-    /**
      * 封面
      */
     private String coverImage;
+    private String category;
+    private String summary;
+    private List<String> tags;
+    private Integer status;
 }

@@ -1,17 +1,17 @@
 package com.usst.thumbs.manager.cache;
 
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.usst.thumbs.common.ThumbsConstant.THUMB_CONSTANT;
+import static com.usst.thumbs.common.ThumbConstant.THUMB_CONSTANT;
 
 
 // 一个基于 HeavyKeeper 的本地热点缓存管理器（heavyKeeper算法在其他地方写）
@@ -99,7 +99,7 @@ public class CacheManager {
     }
 
     // 定时清理过期的热 Key 检测数据
-    @Scheduled(fixedRate = 20, timeUnit = TimeUnit.SECONDS)
+//    @Scheduled(fixedRate = 20, timeUnit = TimeUnit.SECONDS)
     public void cleanHotKeys() {
         hotKeyDetector.fading();
     }

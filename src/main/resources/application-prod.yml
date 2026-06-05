@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://mysql:3306/thumbs
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
+  rabbitmq:
+    username: guest
+    password: ${RABBITMQ_PASSWORD}
+    host: rabbitmq
+    port: 5672
+    virtual-host: /
+    publisher-returns: true
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          max-attempts: 3
+
+  session:
+    store-type: redis
+
+
+springdoc:
+  swagger-ui:
+    enabled: true
+

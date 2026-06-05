@@ -7,9 +7,11 @@ import java.util.Date;
 
 @Data
 public class UserVO implements Serializable {
+    private Long id;
     private String account;
     private String username;
     private String avatar;
+    private Integer status;
     private Integer isAdmin;
     private Date createTime;
     private Date updateTime;

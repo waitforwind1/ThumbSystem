@@ -5,12 +5,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public enum ResultType {
     SUCCESS(200, "操作成功"),
-    ERROR(500, "系统错误"),
+    SYSTEM_ERROR(500, "系统错误"),
 
     PARAM_ERROR(400, "参数错误"),
     NOT_LOGIN(401, "未登录"),
     NO_AUTH(403, "无权限"),
     NOT_FOUND(404, "资源不存在"),
+    ALREADY_EXITS_ERROR(409,"数据冲突"),
 
     USER_NOT_EXIST(10001, "用户不存在"),
     USER_ACCOUNT_EXISTS(10002, "账号已存在"),

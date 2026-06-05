@@ -2,18 +2,26 @@ package com.usst.thumbs.model;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 
+ *
  * @TableName blog
  */
 @TableName(value ="blog")
 @Data
-public class Blog {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class Blog implements Serializable {
     /**
      * 文章id
      */
@@ -48,12 +56,63 @@ public class Blog {
     /**
      * 点赞数
      */
-    private Integer thumbCount;
+    private Long thumbCount;
 
     /**
      * 封面
      */
     private String coverImage;
+
+    /**
+     * 被评论数
+     */
+    private Long commentCount;
+
+    /**
+     * 被收藏数
+     */
+    private Long favoriteCount;
+
+    /**
+     * 被分享次数
+     */
+    private Long shareCount;
+
+    /**
+     *
+     */
+    private Double hotScore;
+
+    /**
+     *
+     */
+    private Long viewCount;
+
+    /**
+     * 业务状态 0-未发布  1-已发布 2-审核中  3-审核不通过 4-已下架
+     */
+    private Integer status;
+
+    /**
+     * 逻辑删除字段
+     */
+    @TableLogic
+    private Integer isDelete;
+
+    /**
+     * 分类
+     */
+    private String category;
+
+    /**
+     * 标签
+     */
+    private String tag;
+
+    /**
+     * 摘要
+     */
+    private String summary;
 
     @Override
     public boolean equals(Object that) {
@@ -66,7 +125,7 @@ public class Blog {
         if (getClass() != that.getClass()) {
             return false;
         }
-        com.usst.thumbs.model.Blog other = (com.usst.thumbs.model.Blog) that;
+        Blog other = (Blog) that;
         return (this.getId() == null ? other.getId() == null : this.getId().equals(other.getId()))
                 && (this.getUserId() == null ? other.getUserId() == null : this.getUserId().equals(other.getUserId()))
                 && (this.getTitle() == null ? other.getTitle() == null : this.getTitle().equals(other.getTitle()))
@@ -74,7 +133,17 @@ public class Blog {
                 && (this.getCreateTime() == null ? other.getCreateTime() == null : this.getCreateTime().equals(other.getCreateTime()))
                 && (this.getUpdateTime() == null ? other.getUpdateTime() == null : this.getUpdateTime().equals(other.getUpdateTime()))
                 && (this.getThumbCount() == null ? other.getThumbCount() == null : this.getThumbCount().equals(other.getThumbCount()))
-                && (this.getCoverImage() == null ? other.getCoverImage() == null : this.getCoverImage().equals(other.getCoverImage()));
+                && (this.getCoverImage() == null ? other.getCoverImage() == null : this.getCoverImage().equals(other.getCoverImage()))
+                && (this.getCommentCount() == null ? other.getCommentCount() == null : this.getCommentCount().equals(other.getCommentCount()))
+                && (this.getFavoriteCount() == null ? other.getFavoriteCount() == null : this.getFavoriteCount().equals(other.getFavoriteCount()))
+                && (this.getShareCount() == null ? other.getShareCount() == null : this.getShareCount().equals(other.getShareCount()))
+                && (this.getHotScore() == null ? other.getHotScore() == null : this.getHotScore().equals(other.getHotScore()))
+                && (this.getViewCount() == null ? other.getViewCount() == null : this.getViewCount().equals(other.getViewCount()))
+                && (this.getStatus() == null ? other.getStatus() == null : this.getStatus().equals(other.getStatus()))
+                && (this.getIsDelete() == null ? other.getIsDelete() == null : this.getIsDelete().equals(other.getIsDelete()))
+                && (this.getCategory() == null ? other.getCategory() == null : this.getCategory().equals(other.getCategory()))
+                && (this.getTag() == null ? other.getTag() == null : this.getTag().equals(other.getTag()))
+                && (this.getSummary() == null ? other.getSummary() == null : this.getSummary().equals(other.getSummary()));
     }
 
     @Override
@@ -89,6 +158,16 @@ public class Blog {
         result = prime * result + ((getUpdateTime() == null) ? 0 : getUpdateTime().hashCode());
         result = prime * result + ((getThumbCount() == null) ? 0 : getThumbCount().hashCode());
         result = prime * result + ((getCoverImage() == null) ? 0 : getCoverImage().hashCode());
+        result = prime * result + ((getCommentCount() == null) ? 0 : getCommentCount().hashCode());
+        result = prime * result + ((getFavoriteCount() == null) ? 0 : getFavoriteCount().hashCode());
+        result = prime * result + ((getShareCount() == null) ? 0 : getShareCount().hashCode());
+        result = prime * result + ((getHotScore() == null) ? 0 : getHotScore().hashCode());
+        result = prime * result + ((getViewCount() == null) ? 0 : getViewCount().hashCode());
+        result = prime * result + ((getStatus() == null) ? 0 : getStatus().hashCode());
+        result = prime * result + ((getIsDelete() == null) ? 0 : getIsDelete().hashCode());
+        result = prime * result + ((getCategory() == null) ? 0 : getCategory().hashCode());
+        result = prime * result + ((getTag() == null) ? 0 : getTag().hashCode());
+        result = prime * result + ((getSummary() == null) ? 0 : getSummary().hashCode());
         return result;
     }
 
@@ -106,6 +185,16 @@ public class Blog {
         sb.append(", updateTime=").append(updateTime);
         sb.append(", thumbCount=").append(thumbCount);
         sb.append(", coverImage=").append(coverImage);
+        sb.append(", commentCount=").append(commentCount);
+        sb.append(", favoriteCount=").append(favoriteCount);
+        sb.append(", shareCount=").append(shareCount);
+        sb.append(", hotScore=").append(hotScore);
+        sb.append(", viewCount=").append(viewCount);
+        sb.append(", status=").append(status);
+        sb.append(", isDelete=").append(isDelete);
+        sb.append(", category=").append(category);
+        sb.append(", tag=").append(tag);
+        sb.append(", summary=").append(summary);
         sb.append("]");
         return sb.toString();
     }

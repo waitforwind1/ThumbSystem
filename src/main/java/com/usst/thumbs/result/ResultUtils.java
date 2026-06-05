@@ -5,6 +5,13 @@ public class ResultUtils {
         return new Result<>(resultType.getCode(),resultType.getMsg(),data,description);
     }
 
+    public static <T> Result<T> success(){
+        return new Result<>(ResultType.SUCCESS,null,"ok");
+    }
+    public static <T> Result<T> success(T data){
+        return new Result<>(ResultType.SUCCESS,data,"ok");
+    }
+
     public static <T> Result<T> error(ResultType resultType,T data,String description){
         return new Result<>(resultType.getCode(),resultType.getMsg(),data,description);
     }

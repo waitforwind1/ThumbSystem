@@ -5,18 +5,20 @@
 <mapper namespace="com.usst.thumbs.mapper.UserMapper">
 
     <resultMap id="BaseResultMap" type="com.usst.thumbs.model.User">
-            <id property="id" column="id" />
-            <result property="password" column="password" />
-            <result property="username" column="username" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="avatar" column="avatar" />
-            <result property="isAdmin" column="is_admin" />
-            <result property="account" column="account" />
+        <id property="id" column="id" />
+        <result property="password" column="password" />
+        <result property="username" column="username" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="avatar" column="avatar" />
+        <result property="isAdmin" column="is_admin" />
+        <result property="isDelete" column="is_delete" />
+        <result property="account" column="account" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, password, username, create_time, update_time, avatar,
-        is_admin,account
+        id,password,username,status,create_time,update_time,
+        avatar,is_admin,is_delete,account
     </sql>
 </mapper>

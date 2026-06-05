@@ -1,39 +1,22 @@
 spring:
   application:
     name: Thumbs
-  pulsar:
-    client:
-      service-url: pulsar://localhost:6650
-    admin:
-      service-url: http://localhost:8081
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USER}
-    password: ${MYSQL_PASSWORD}
-    url: jdbc:mysql://localhost:3306/thumbs
-  data:
-    redis:
-#      username: ${REDIS_USER}
-      password: ${REDIS_PASSWORD}
-      database: 0
-      host: localhost
-      port: 6379
-      connect-timeout: 5000ms
+  profiles:
+    active: prod
 
 
 mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除字段名(deleted为实体类属性名称)
+      logic-delete-value: 1 # 逻辑已删除值。可选，默认值为 1
+      logic-not-delete-value: 0 # 逻辑未删除值。可选，默认值为 0
 
 server:
-  port: 8080
+  servlet:
+    session:
+      timeout: 1h
+    context-path: /api
+  port: 8082
 
-knife4j:
-  setting:
-    language: zh_cn
-  basic:
-    enable: true
 
-springdoc:
-  swagger-ui:
-    enabled: true
