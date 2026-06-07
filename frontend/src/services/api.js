@@ -39,6 +39,15 @@ function json(path, data, method = 'POST') {
   })
 }
 
+function upload(path, file) {
+  const data = new FormData()
+  data.append('file', file)
+  return request(path, {
+    method: 'POST',
+    body: data
+  })
+}
+
 export const api = {
   login: (account, password) => form('/user/login', { account, password }),
   register: (account, password, checkPassword) => form('/user/register', { account, password, checkPassword }),
@@ -47,9 +56,11 @@ export const api = {
   updateProfile: data => json('/user/profile/update', data),
   userProfile: userId => request(`/user/${userId}/profile`),
   favorites: () => request('/user/getFav'),
-  adminUsers: () => request('/user/admin/list'),
+  adminUsers: (pageNo = 1, pageSize = 10) => request(`/user/admin/list?pageNo=${pageNo}&pageSize=${pageSize}`),
   banUser: userId => request(`/user/admin/ban/${userId}`, { method: 'POST' }),
   unbanUser: userId => request(`/user/admin/unban/${userId}`, { method: 'POST' }),
+  uploadImage: file => upload('/file/upload', file),
+  downloadRemoteImage: imageUrl => json('/file/downloadRemoteImage', { imageUrl }),
 
   blogs: (pageNo = 1, pageSize = 10) => request(`/blog/getBlog?pageNo=${pageNo}&pageSize=${pageSize}`),
   hot: (limit = 10) => request(`/hot/list?limit=${limit}`),

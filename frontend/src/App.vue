@@ -1,5 +1,5 @@
 <template>
-  <div :class="['app-shell', { 'home-fixed-shell': ['home', 'hot', 'compose', 'editBlog'].includes(activeView) }, `view-${activeView}`]">
+  <div :class="['app-shell', `view-${activeView}`]">
     <header class="top-nav">
       <div class="nav-inner">
         <button class="brand" type="button" @click="switchView('home')">
@@ -113,7 +113,14 @@
           <div v-if="blogList.length" class="post-grid">
             <article v-for="blog in blogList" :key="blog.id" class="post-card" @click="openDetail(blog)">
               <div class="post-cover">
-                <img v-if="blog.coverImage && !blog.coverBroken" :src="blog.coverImage" :alt="blog.title || '文章封面'" @error="markCoverBroken(blog)" />
+                <img
+                  v-if="blog.coverImage && !blog.coverBroken"
+                  :src="normalizeImageUrl(blog.coverImage)"
+                  :alt="blog.title || '文章封面'"
+                  loading="lazy"
+                  decoding="async"
+                  @error="markCoverBroken(blog)"
+                />
                 <div v-else class="cover-fallback">{{ getInitial(blog.title || 'T') }}</div>
               </div>
               <div class="post-body">
@@ -336,15 +343,31 @@
             <span>标题</span>
             <input v-model.trim="blogForm.title" placeholder="例如：Redis 点赞状态一致性问题复盘" />
           </label>
-          <div class="form-grid">
-            <label>
-              <span>分类</span>
-              <input v-model.trim="blogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
-            </label>
-            <label>
-              <span>封面链接</span>
-              <input v-model.trim="blogForm.coverImage" placeholder="https://..." />
-            </label>
+          <label>
+            <span>分类</span>
+            <input v-model.trim="blogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
+          </label>
+          <div class="cover-field">
+            <span>封面图片</span>
+            <div class="cover-picker">
+              <label class="cover-file-button">
+                <ImagePlus :size="16" />
+                <span>{{ blogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
+                <input type="file" accept="image/*" @change="handleCoverFileChange('compose', $event)" />
+              </label>
+              <label class="cover-url-input">
+                <Link :size="16" />
+                <input v-model.trim="blogForm.coverImage" placeholder="或粘贴图片 URL，发布时自动下载到本地" />
+              </label>
+            </div>
+            <div v-if="blogCoverFile || blogForm.coverImage" class="cover-preview">
+              <img :src="blogCoverPreview || normalizeImageUrl(blogForm.coverImage)" alt="文章封面预览" decoding="async" />
+              <div>
+                <strong>{{ blogCoverFile ? blogCoverFile.name : '远程封面预览' }}</strong>
+                <span>{{ blogCoverFile ? '发布时会自动压缩并上传到服务器' : '发布时会下载到服务器本地' }}</span>
+                <button v-if="blogCoverFile" type="button" @click="clearCoverFile('compose')">移除本地图片</button>
+              </div>
+            </div>
           </div>
           <label>
             <span>摘要</span>
@@ -362,8 +385,8 @@
             <button class="button subtle" type="button" @click="resetBlogForm">
               <X :size="16" /> 清空
             </button>
-            <button class="button primary" type="submit">
-              <PenLine :size="16" /> 发布文章
+            <button class="button primary" type="submit" :disabled="isSubmittingBlog">
+              <PenLine :size="16" /> {{ isSubmittingBlog ? '处理中...' : '发布文章' }}
             </button>
           </div>
         </form>
@@ -493,15 +516,31 @@
             <span>标题</span>
             <input v-model.trim="editBlogForm.title" placeholder="请输入标题" />
           </label>
-          <div class="form-grid">
-            <label>
-              <span>分类</span>
-              <input v-model.trim="editBlogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
-            </label>
-            <label>
-              <span>封面链接</span>
-              <input v-model.trim="editBlogForm.coverImage" placeholder="https://..." />
-            </label>
+          <label>
+            <span>分类</span>
+            <input v-model.trim="editBlogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
+          </label>
+          <div class="cover-field">
+            <span>封面图片</span>
+            <div class="cover-picker">
+              <label class="cover-file-button">
+                <ImagePlus :size="16" />
+                <span>{{ editBlogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
+                <input type="file" accept="image/*" @change="handleCoverFileChange('edit', $event)" />
+              </label>
+              <label class="cover-url-input">
+                <Link :size="16" />
+                <input v-model.trim="editBlogForm.coverImage" placeholder="或粘贴图片 URL，保存时自动下载到本地" />
+              </label>
+            </div>
+            <div v-if="editBlogCoverFile || editBlogForm.coverImage" class="cover-preview">
+              <img :src="editBlogCoverPreview || normalizeImageUrl(editBlogForm.coverImage)" alt="文章封面预览" decoding="async" />
+              <div>
+                <strong>{{ editBlogCoverFile ? editBlogCoverFile.name : '当前封面预览' }}</strong>
+                <span>{{ editBlogCoverFile ? '保存时会自动压缩并上传到服务器' : '远程地址保存时会下载到服务器本地' }}</span>
+                <button v-if="editBlogCoverFile" type="button" @click="clearCoverFile('edit')">移除本地图片</button>
+              </div>
+            </div>
           </div>
           <label>
             <span>摘要</span>
@@ -519,8 +558,8 @@
             <button class="button subtle" type="button" @click="cancelEditBlog">
               <X :size="16" /> 取消
             </button>
-            <button class="button primary" type="submit">
-              <Save :size="16" /> 保存修改
+            <button class="button primary" type="submit" :disabled="isSubmittingBlog">
+              <Save :size="16" /> {{ isSubmittingBlog ? '处理中...' : '保存修改' }}
             </button>
           </div>
         </form>
@@ -584,7 +623,7 @@
         <section v-if="adminMode === 'users'" class="settings-card admin-panel">
           <div class="card-head-row">
             <h2>用户列表</h2>
-            <span class="list-count">共 {{ adminUsers.length }} 人</span>
+            <span class="list-count">共 {{ adminUserTotal }} 人</span>
           </div>
           <div class="admin-table">
             <div class="admin-row admin-head">
@@ -626,6 +665,19 @@
             <Users :size="28" />
             <span>暂无用户数据</span>
           </div>
+          <nav v-if="adminUserPages > 1" class="pagination-bar">
+            <button class="button subtle" type="button" :disabled="adminUserPageNo <= 1" @click="changeAdminUserPage(adminUserPageNo - 1)">上一页</button>
+            <button
+              v-for="page in adminUserPageButtons"
+              :key="page"
+              :class="['button', page === adminUserPageNo ? 'primary' : 'subtle']"
+              type="button"
+              @click="changeAdminUserPage(page)"
+            >
+              {{ page }}
+            </button>
+            <button class="button subtle" type="button" :disabled="adminUserPageNo >= adminUserPages" @click="changeAdminUserPage(adminUserPageNo + 1)">下一页</button>
+          </nav>
         </section>
 
         <section v-else class="settings-card admin-panel">
@@ -739,6 +791,8 @@ import {
   Users,
   UserPlus,
   LockKeyhole,
+  ImagePlus,
+  Link,
   X
 } from 'lucide-vue-next'
 import { api } from './services/api'
@@ -770,6 +824,10 @@ const messages = ref([])
 const adminUsers = ref([])
 const adminBlogs = ref([])
 const adminMode = ref('users')
+const adminUserPageNo = ref(1)
+const adminUserPageSize = 10
+const adminUserTotal = ref(0)
+const adminUserPages = ref(1)
 const comments = ref([])
 const selectedBlog = ref(null)
 const viewingProfile = ref(null)
@@ -791,6 +849,11 @@ const replyTarget = ref(null)
 const tagInput = ref('')
 const editTagInput = ref('')
 const editingBlogId = ref(null)
+const blogCoverFile = ref(null)
+const editBlogCoverFile = ref(null)
+const blogCoverPreview = ref('')
+const editBlogCoverPreview = ref('')
+const isSubmittingBlog = ref(false)
 
 const authForm = reactive({ account: '', password: '', checkPassword: '' })
 const profileForm = reactive({ username: '', avatar: '' })
@@ -840,6 +903,11 @@ const hotPageButtons = computed(() => {
 const myBlogPageButtons = computed(() => {
   const start = Math.max(1, myBlogPageNo.value - 2)
   const end = Math.min(totalMyBlogPages.value, start + 4)
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+})
+const adminUserPageButtons = computed(() => {
+  const start = Math.max(1, adminUserPageNo.value - 2)
+  const end = Math.min(adminUserPages.value, start + 4)
   return Array.from({ length: end - start + 1 }, (_, index) => start + index)
 })
 const visibleTags = computed(() => {
@@ -1110,22 +1178,172 @@ function cancelReply() {
   replyText.value = ''
 }
 
+function handleCoverFileChange(mode, event) {
+  const file = event.target.files?.[0] || null
+  const fileRef = mode === 'edit' ? editBlogCoverFile : blogCoverFile
+  const previewRef = mode === 'edit' ? editBlogCoverPreview : blogCoverPreview
+
+  revokeObjectUrl(previewRef.value)
+  fileRef.value = file
+  previewRef.value = file ? URL.createObjectURL(file) : ''
+  event.target.value = ''
+}
+
+function clearCoverFile(mode) {
+  const fileRef = mode === 'edit' ? editBlogCoverFile : blogCoverFile
+  const previewRef = mode === 'edit' ? editBlogCoverPreview : blogCoverPreview
+  revokeObjectUrl(previewRef.value)
+  fileRef.value = null
+  previewRef.value = ''
+}
+
+function revokeObjectUrl(url) {
+  if (url?.startsWith('blob:')) {
+    URL.revokeObjectURL(url)
+  }
+}
+
+function isLocalUploadPath(pathname) {
+  return /^\/(?:api\/)?uploads?\//.test(pathname || '')
+}
+
+function normalizeLocalUploadPath(pathname) {
+  return String(pathname || '').replace(/^\/api(?=\/uploads?\/)/, '')
+}
+
+function normalizeImageUrl(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^(blob:|data:)/i.test(raw)) return raw
+  if (raw.startsWith('/')) {
+    return isLocalUploadPath(raw) ? normalizeLocalUploadPath(raw) : raw
+  }
+  if (!/^https?:\/\//i.test(raw)) return raw
+
+  try {
+    const url = new URL(raw)
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(url.hostname)
+    const isSameHost = url.hostname === window.location.hostname
+    if (isLocalUploadPath(url.pathname) && (url.origin === window.location.origin || isLocalHost || isSameHost)) {
+      return normalizeLocalUploadPath(url.pathname) + url.search + url.hash
+    }
+  } catch {
+    return raw
+  }
+
+  return raw
+}
+
+function shouldDownloadRemoteImage(value) {
+  const raw = String(value || '').trim()
+  if (!raw || isLocalUploadPath(raw)) return false
+  if (!/^https?:\/\//i.test(raw)) return false
+  try {
+    const url = new URL(raw)
+    const isSameOrigin = url.origin === window.location.origin
+    const isLocalHost = ['localhost', '127.0.0.1'].includes(url.hostname)
+    const isSameHost = url.hostname === window.location.hostname
+    return !(isLocalUploadPath(url.pathname) && (isSameOrigin || isLocalHost || isSameHost))
+  } catch {
+    return false
+  }
+}
+
+async function resolveCoverImage(form, fileRef) {
+  if (fileRef.value) {
+    const uploadFile = await prepareCoverFile(fileRef.value)
+    const localUrl = await api.uploadImage(uploadFile)
+    form.coverImage = localUrl
+    clearCoverFile(fileRef === editBlogCoverFile ? 'edit' : 'compose')
+    return localUrl
+  }
+
+  const coverImage = (form.coverImage || '').trim()
+  if (!coverImage || !shouldDownloadRemoteImage(coverImage)) {
+    return coverImage
+  }
+
+  const localUrl = await api.downloadRemoteImage(coverImage)
+  form.coverImage = localUrl
+  return localUrl
+}
+
+async function buildBlogPayload(form, tags, fileRef) {
+  const coverImage = await resolveCoverImage(form, fileRef)
+  return { ...form, coverImage, tags }
+}
+
+async function prepareCoverFile(file) {
+  const maxUploadBytes = 900 * 1024
+  if (!file.type?.startsWith('image/')) {
+    throw new Error('请选择图片文件作为文章封面')
+  }
+  if (file.size <= maxUploadBytes) return file
+
+  const compressed = await compressImage(file, maxUploadBytes)
+  if (compressed.size > maxUploadBytes) {
+    throw new Error('图片过大，请换一张更小的封面图')
+  }
+  return compressed
+}
+
+async function compressImage(file, maxBytes) {
+  const bitmap = await createImageBitmap(file)
+  const maxSide = 1280
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  const context = canvas.getContext('2d')
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close?.()
+
+  for (const quality of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+    const blob = await canvasToBlob(canvas, 'image/jpeg', quality)
+    if (blob.size <= maxBytes || quality === 0.42) {
+      return new File([blob], replaceFileExtension(file.name, 'jpg'), { type: 'image/jpeg' })
+    }
+  }
+  return file
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob)
+      else reject(new Error('图片压缩失败'))
+    }, type, quality)
+  })
+}
+
+function replaceFileExtension(name, extension) {
+  return `${String(name || 'cover').replace(/\.[^.]+$/, '')}.${extension}`
+}
+
 async function publishBlog() {
   if (!requireLogin('请先登录后发布文章')) return
+  if (isSubmittingBlog.value) return
   await guarded(async () => {
-    const tags = tagInput.value.split(',').map(item => item.trim()).filter(Boolean)
-    await api.addBlog({ ...blogForm, tags })
-    resetBlogForm()
-    pageNo.value = 1
-    selectedTag.value = ''
-    await refreshBlogs()
-    activeView.value = 'home'
+    isSubmittingBlog.value = true
+    try {
+      const tags = tagInput.value.split(',').map(item => item.trim()).filter(Boolean)
+      const payload = await buildBlogPayload(blogForm, tags, blogCoverFile)
+      await api.addBlog(payload)
+      resetBlogForm()
+      pageNo.value = 1
+      selectedTag.value = ''
+      await refreshBlogs()
+      activeView.value = 'home'
+    } finally {
+      isSubmittingBlog.value = false
+    }
   }, '发布成功')
 }
 
 function resetBlogForm() {
   Object.assign(blogForm, { title: '', category: '', coverImage: '', summary: '', content: '', tags: [] })
   tagInput.value = ''
+  clearCoverFile('compose')
 }
 
 async function toggleThumb(blog) {
@@ -1255,6 +1473,7 @@ async function refreshMyBlogs() {
 
 function startEditBlog(blog) {
   editingBlogId.value = blog.id
+  clearCoverFile('edit')
   Object.assign(editBlogForm, {
     title: blog.title || '',
     category: blog.category || '',
@@ -1271,17 +1490,25 @@ function cancelEditBlog() {
   editingBlogId.value = null
   Object.assign(editBlogForm, { title: '', category: '', coverImage: '', summary: '', content: '', tags: [] })
   editTagInput.value = ''
+  clearCoverFile('edit')
   activeView.value = 'myArticles'
 }
 
 async function updateBlog() {
   if (!editingBlogId.value) return
+  if (isSubmittingBlog.value) return
   await guarded(async () => {
-    const tags = editTagInput.value.split(',').map(item => item.trim()).filter(Boolean)
-    await updateBlogRequest(editingBlogId.value, { ...editBlogForm, tags })
-    cancelEditBlog()
-    await Promise.allSettled([loadMyBlogs(), refreshBlogs(), loadHot()])
-    activeView.value = 'myArticles'
+    isSubmittingBlog.value = true
+    try {
+      const tags = editTagInput.value.split(',').map(item => item.trim()).filter(Boolean)
+      const payload = await buildBlogPayload(editBlogForm, tags, editBlogCoverFile)
+      await updateBlogRequest(editingBlogId.value, payload)
+      cancelEditBlog()
+      await Promise.allSettled([loadMyBlogs(), refreshBlogs(), loadHot()])
+      activeView.value = 'myArticles'
+    } finally {
+      isSubmittingBlog.value = false
+    }
   }, '文章已修改')
 }
 
@@ -1316,11 +1543,33 @@ async function deleteMyBlog(blog) {
 async function loadAdminData() {
   if (!isAdmin.value) return
   const [usersResult, blogsResult] = await Promise.allSettled([
-    api.adminUsers(),
+    api.adminUsers(adminUserPageNo.value, adminUserPageSize),
     api.adminBlogs(1, 100)
   ])
-  adminUsers.value = usersResult.status === 'fulfilled' && Array.isArray(usersResult.value) ? usersResult.value : []
+  applyAdminUserPage(usersResult.status === 'fulfilled' ? usersResult.value : null)
   adminBlogs.value = blogsResult.status === 'fulfilled' && Array.isArray(blogsResult.value) ? blogsResult.value : []
+}
+
+function applyAdminUserPage(page) {
+  if (Array.isArray(page)) {
+    adminUsers.value = page
+    adminUserTotal.value = page.length
+    adminUserPages.value = 1
+    adminUserPageNo.value = 1
+    return
+  }
+
+  const records = Array.isArray(page?.records) ? page.records : []
+  adminUsers.value = records
+  adminUserTotal.value = Number(page?.total || records.length || 0)
+  adminUserPages.value = Math.max(1, Number(page?.pages || Math.ceil(adminUserTotal.value / adminUserPageSize) || 1))
+  adminUserPageNo.value = Math.min(Math.max(1, Number(page?.current || adminUserPageNo.value || 1)), adminUserPages.value)
+}
+
+async function changeAdminUserPage(page) {
+  if (page < 1 || page > adminUserPages.value || page === adminUserPageNo.value) return
+  adminUserPageNo.value = page
+  await loadAdminData()
 }
 
 async function toggleUserBan(user) {

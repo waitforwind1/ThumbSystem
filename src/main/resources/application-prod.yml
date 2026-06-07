@@ -25,6 +25,9 @@ spring:
         retry:
           max-attempts: 3
 
+  elasticsearch:
+    uris: http://thumbs-elasticsearch:9200
+
   session:
     store-type: redis
 
@@ -32,4 +35,9 @@ spring:
 springdoc:
   swagger-ui:
     enabled: true
+
+app:
+  upload:
+    dir: /home/ubuntu/thumbs/uploads
+    url-prefix: /upload
 

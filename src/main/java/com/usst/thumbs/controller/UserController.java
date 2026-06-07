@@ -1,5 +1,6 @@
 package com.usst.thumbs.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.usst.thumbs.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.User;
@@ -17,9 +18,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.usst.thumbs.common.UserConstant.USER_IS_ADMIN;
 
 @RestController
 @RequestMapping("/user")
@@ -87,16 +85,10 @@ public class UserController {
     }
 
     @GetMapping("/admin/list")
-    public Result<List<UserVO>> listUsers(HttpServletRequest request) {
-        assertAdmin(request);
-        List<UserVO> users = userService.list().stream()
-                .map(user -> {
-                    UserVO userVO = new UserVO();
-                    BeanUtils.copyProperties(user, userVO);
-                    return userVO;
-                })
-                .collect(Collectors.toList());
-        return ResultUtils.success(users);
+    public Result<Page<UserVO>> listUsers(@RequestParam(defaultValue = "1") Integer pageNo,
+                                          @RequestParam(defaultValue = "10") Integer pageSize,
+                                          HttpServletRequest request) {
+        return ResultUtils.success(userService.userList(pageNo,pageSize,request));
     }
 
     @PostMapping("/admin/ban/{userId}")
@@ -109,10 +101,4 @@ public class UserController {
         return ResultUtils.success(userService.unBanUser(userId, request));
     }
 
-    private void assertAdmin(HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
-        if (loginUser.getIsAdmin() == null || !loginUser.getIsAdmin().equals(USER_IS_ADMIN)) {
-            throw new BusinessException(ResultType.NO_AUTH, "无管理员权限");
-        }
-    }
 }

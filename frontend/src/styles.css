@@ -173,10 +173,18 @@ textarea:focus {
 
 .nav-tabs {
   gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-tabs button {
   position: relative;
+  flex: 0 0 auto;
   gap: 6px;
   min-height: 38px;
   border-radius: var(--radius-control);
@@ -184,6 +192,10 @@ textarea:focus {
   color: var(--color-text-muted);
   background: transparent;
   transition: color 180ms ease, background 180ms ease;
+}
+
+.nav-tabs button span {
+  white-space: nowrap;
 }
 
 .nav-tabs button:hover,
@@ -292,6 +304,12 @@ textarea:focus {
 .button.primary:hover {
   background: var(--color-primary-hover);
   box-shadow: 0 8px 18px rgba(30, 128, 255, 0.2);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  box-shadow: none;
 }
 
 .button.subtle {
@@ -541,8 +559,8 @@ textarea:focus {
 
 .post-card {
   display: grid;
-  grid-template-rows: 150px minmax(0, 1fr) auto;
-  min-height: 342px;
+  grid-template-rows: 160px auto auto;
+  min-height: 370px;
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 249, 0.98)),
@@ -595,6 +613,9 @@ textarea:focus {
 }
 
 .post-body {
+  display: grid;
+  align-content: start;
+  gap: 8px;
   min-width: 0;
   padding: 14px 14px 10px;
 }
@@ -611,6 +632,7 @@ textarea:focus {
   flex-wrap: wrap;
   gap: 6px;
   min-height: 26px;
+  overflow: hidden;
 }
 
 .home-fixed-shell .post-tags {
@@ -684,6 +706,7 @@ textarea:focus {
 .post-card h2 {
   display: -webkit-box;
   min-height: 0;
+  margin: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
@@ -757,6 +780,7 @@ textarea:focus {
 .post-footer {
   display: grid;
   gap: 9px;
+  align-self: end;
   border-top: 1px solid var(--color-border);
   padding: 10px 14px 12px;
   background: rgba(248, 250, 252, 0.72);
@@ -796,6 +820,7 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
 }
 
 .home-fixed-shell .post-stats {
@@ -1619,6 +1644,109 @@ label span {
   gap: 14px;
 }
 
+.cover-field {
+  display: grid;
+  gap: 8px;
+}
+
+.cover-field > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cover-picker {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.36fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.cover-file-button,
+.cover-url-input {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.cover-file-button {
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.cover-file-button input {
+  display: none;
+}
+
+.cover-url-input {
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--color-text-subtle);
+}
+
+.cover-url-input input {
+  border: 0;
+  padding-right: 0;
+  padding-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cover-preview {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-control);
+  padding: 8px;
+  background: rgba(248, 250, 252, 0.86);
+}
+
+.cover-preview img {
+  width: 168px;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 7px;
+  object-fit: cover;
+  background: #e8eef6;
+}
+
+.cover-preview strong,
+.cover-preview span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cover-preview strong {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.cover-preview span {
+  margin-top: 4px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
+.cover-preview button {
+  justify-self: start;
+  margin-top: 8px;
+  color: #b42318;
+  background: transparent;
+  font-weight: 800;
+}
+
 .editor-actions {
   justify-content: flex-end;
   gap: 10px;
@@ -1978,6 +2106,16 @@ label span {
   }
 }
 
+@media (max-width: 1320px) {
+  .nav-inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .nav-search {
+    display: none;
+  }
+}
+
 @media (max-width: 1180px) {
   .nav-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1997,6 +2135,23 @@ label span {
 }
 
 @media (max-width: 900px) {
+  .home-fixed-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .home-fixed-shell .page {
+    display: block;
+    height: auto;
+    overflow: visible;
+    padding: var(--space-page);
+  }
+
+  .home-fixed-shell .page::before {
+    display: block;
+  }
+
   .nav-inner {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -2013,6 +2168,17 @@ label span {
   .nav-tabs {
     overflow-x: auto;
     padding-bottom: 2px;
+    width: 100%;
+    scrollbar-width: none;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tabs button {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .nav-auth-actions {
@@ -2034,10 +2200,53 @@ label span {
   .home-layout,
   .profile-grid {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
   }
 
   .right-rail {
     position: static;
+  }
+
+  .home-fixed-shell .feed-column,
+  .home-fixed-shell .feed-column.has-filter,
+  .home-fixed-shell .right-rail,
+  .home-fixed-shell .hot-page,
+  .home-fixed-shell .compose-page {
+    display: grid;
+    grid-template-rows: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .home-fixed-shell .post-grid,
+  .home-fixed-shell .hot-rank-list {
+    grid-template-rows: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .home-fixed-shell .post-card,
+  .home-fixed-shell .rank-card {
+    min-height: auto;
+    overflow: hidden;
+  }
+
+  .home-fixed-shell .right-rail .panel {
+    display: block;
+    overflow: visible;
+  }
+
+  .home-fixed-shell .editor-card {
+    grid-template-rows: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .home-fixed-shell .editor-card textarea {
+    min-height: 260px;
+    height: auto;
+    resize: vertical;
   }
 
   .section-hero,
@@ -2069,6 +2278,30 @@ label span {
     --space-page: 14px;
   }
 
+  body {
+    min-width: 0;
+  }
+
+  .top-nav {
+    position: sticky;
+  }
+
+  .brand-copy small {
+    display: none;
+  }
+
+  .nav-user {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .nav-user .button,
+  .nav-auth-actions .button,
+  .editor-actions .button {
+    width: 100%;
+  }
+
   .nav-auth-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2090,6 +2323,10 @@ label span {
 
   .post-card {
     min-height: auto;
+  }
+
+  .home-fixed-shell .post-card {
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   .post-cover {
@@ -2117,8 +2354,105 @@ label span {
   }
 
   .form-grid,
+  .cover-picker,
   .message-card {
     grid-template-columns: 1fr;
+  }
+
+  .cover-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .cover-preview img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .rank-card,
+  .home-fixed-shell .rank-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .rank-score,
+  .home-fixed-shell .rank-score {
+    grid-column: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 12px 0 0;
+  }
+
+  .rank-score button,
+  .home-fixed-shell .rank-score button {
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .section-hero,
+  .profile-cover,
+  .editor-card,
+  .settings-card,
+  .comments-shell {
+    padding: 18px;
+  }
+
+  .section-hero h1,
+  .compact-hero h1,
+  .profile-cover h1 {
+    font-size: 24px;
+    line-height: 1.28;
+  }
+
+  .editor-actions,
+  .reply-editor,
+  .comments-head,
+  .card-head-row,
+  .my-blog-row,
+  .row-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .comment-editor .button,
+  .settings-card .button {
+    justify-self: stretch;
+  }
+
+  .profile-identity {
+    align-items: flex-start;
+  }
+
+  .profile-metrics {
+    justify-content: stretch;
+  }
+
+  .profile-metrics span {
+    min-width: 0;
+    flex: 1 1 120px;
+  }
+
+  .admin-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .admin-tabs button {
+    flex: 0 0 auto;
+  }
+
+  .admin-table {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .admin-row,
+  .blog-admin-table .admin-row {
+    grid-template-columns: minmax(180px, 1fr) 96px 96px 110px 112px;
+    min-width: 640px;
   }
 
   .tag-cloud {

@@ -61,6 +61,7 @@ public class Blog implements Serializable {
     /**
      * 封面
      */
+
     private String coverImage;
 
     /**
@@ -102,6 +103,7 @@ public class Blog implements Serializable {
     /**
      * 分类
      */
+
     private String category;
 
     /**

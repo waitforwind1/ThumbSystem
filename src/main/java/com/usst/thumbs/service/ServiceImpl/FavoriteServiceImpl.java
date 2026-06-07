@@ -117,12 +117,15 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
                 .toList();
         if(blogIds.isEmpty())
             return Collections.emptyList();
-        List<Blog> blogList = blogMapper.selectBatchIds(blogIds);
+        List<Blog> blogList = blogMapper.selectByIds(blogIds);
         Map<Long, Blog> blogMap = blogList.stream()
                 .collect(Collectors.toMap(Blog::getId, blog -> blog));
         List<Blog> blogs = new ArrayList<>();
         for (Long blogId : blogIds) {
-            blogs.add(blogMap.get(blogId));
+            Blog blog = blogMap.get(blogId);
+            if(blog!=null){
+                blogs.add(blog);
+            }
         }
         return blogs;
     }

@@ -77,10 +77,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     public Boolean writeBlog(BlogAddRequest blogAddRequest,HttpServletRequest request) {
         if(request==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"Http请求为空");
-        if(blogAddRequest.getContent()==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"内容为空");
-        if(blogAddRequest.getTitle()==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"标题为空");
         if(this.lambdaQuery().eq(Blog::getTitle,blogAddRequest.getTitle()).one()!=null)
             throw new BusinessException(ResultType.ALREADY_EXITS_ERROR,"该博客标题已经存在,更换一个");
         User user = getLoginUser(request);
@@ -130,12 +126,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         boolean isAdmin = user.getIsAdmin().equals(UserConstant.USER_IS_ADMIN);
         if (!isAuthor && !isAdmin) {
             throw new BusinessException(ResultType.NO_AUTH, "没有权限修改该文章");
-        }
-        if (blogAddRequest.getTitle() == null || blogAddRequest.getTitle().isBlank()) {
-            throw new BusinessException(ResultType.PARAM_ERROR, "标题为空");
-        }
-        if (blogAddRequest.getContent() == null || blogAddRequest.getContent().isBlank()) {
-            throw new BusinessException(ResultType.PARAM_ERROR, "内容为空");
         }
         Blog sameTitleBlog = this.lambdaQuery()
                 .eq(Blog::getTitle, blogAddRequest.getTitle())

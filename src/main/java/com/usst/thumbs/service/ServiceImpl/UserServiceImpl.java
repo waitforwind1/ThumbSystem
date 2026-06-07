@@ -1,6 +1,8 @@
 package com.usst.thumbs.service.ServiceImpl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.UserConstant;
 import com.usst.thumbs.exception.BusinessException;
@@ -10,6 +12,7 @@ import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.UserUpdateRequest;
 import com.usst.thumbs.model.vo.UserProfileVO;
+import com.usst.thumbs.model.vo.UserVO;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static com.usst.thumbs.common.UserConstant.USER_IS_ADMIN;
 
 /**
 * @author 22097
@@ -40,10 +46,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public Integer register(String account, String password, String checkPassword) {
-        if(account ==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"账号不允许为空");
-        if(password ==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"密码不允许为空");
+        if(StrUtil.isBlank(account) || StrUtil.isBlank(password))
+            throw new BusinessException(ResultType.PARAM_ERROR,"账号密码不允许为空");
         if(!password.equals(checkPassword))
             throw new BusinessException(ResultType.PARAM_ERROR,"两次输入密码不一致");
         if(account.length()<6||account.length()>20)
@@ -69,10 +73,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User login(String account, String password,HttpServletRequest request) {
-        if(account ==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"账号不允许为空");
-        if(password ==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"密码不允许为空");
+        if(StrUtil.isBlank(account) || StrUtil.isBlank(password))
+            throw new BusinessException(ResultType.PARAM_ERROR,"账号密码不允许为空");
         if(account.length()<6||account.length()>20)
             throw new BusinessException(ResultType.PARAM_ERROR,"账号长度不合法");
         if(password.length()<6||password.length()>20)
@@ -98,6 +100,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User getLoginUser(HttpServletRequest request) {
+        if(request==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         Object object = request.getSession().getAttribute(USER_LOGIN_STATE);
         if(object instanceof User user){
             return user;
@@ -144,7 +148,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if(user==null)
             throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
         Long blogCount = blogMapper.selectCount(new LambdaQueryWrapper<Blog>()
-                .eq(Blog::getUserId, user.getId()));
+                .eq(Blog::getUserId, userId));
         return UserProfileVO.builder()
                 .id(user.getId())
                 .userName(user.getUsername())
@@ -175,6 +179,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return this.lambdaUpdate().eq(User::getId,userId).set(User::getStatus,UserConstant.USER_NOT_BAN).update();
     }
 
+    @Override
+    public Page<UserVO> userList(Integer pageNo,Integer pageSize,HttpServletRequest request) {
+        User loginUser = getLoginUser(request);
+        if (!loginUser.getIsAdmin().equals(USER_IS_ADMIN)) {
+            throw new BusinessException(ResultType.NO_AUTH, "无管理员权限");
+        }
+        int current = pageNo==null||pageNo<1?2:pageNo;
+        int size = pageSize==null || pageSize<1?7:Math.max(pageSize,50);
+        Page<User> page = new Page<>(current,size);
+        Page<User> userPage = this.page(page);
+        Page<UserVO> userVOPage = new Page<>(
+                userPage.getCurrent(),
+                userPage.getSize(),
+                userPage.getTotal()
+        );
+        List<UserVO> userVOList = userPage.getRecords().stream()
+                .map(this::convertToUservo)
+                .toList();
+        userVOPage.setRecords(userVOList);
+        return userVOPage;
+    }
+
+    private UserVO convertToUservo(User user){
+        if(user==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
+        UserVO userVO = new UserVO();
+        userVO.setId(user.getId());
+        userVO.setStatus(user.getStatus());
+        userVO.setAvatar(user.getAvatar());
+        userVO.setAccount(user.getAccount());
+        userVO.setUsername(user.getUsername());
+        userVO.setIsAdmin(user.getIsAdmin());
+        userVO.setCreateTime(user.getCreateTime());
+        userVO.setUpdateTime(user.getUpdateTime());
+        return userVO;
+    }
 
     public User getsafeUser(User user){
         User safeUser = new User();

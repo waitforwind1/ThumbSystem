@@ -18,6 +18,7 @@ import com.usst.thumbs.service.BlogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class BlogController {
     private  BlogService blogService;
 
     @PostMapping("add")
-    public Result<Boolean> addBlog(@RequestBody BlogAddRequest blogAddRequest,HttpServletRequest request){
+    public Result<Boolean> addBlog(@RequestBody @Valid BlogAddRequest blogAddRequest, HttpServletRequest request){
         if(blogAddRequest==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         if(getLoginUser(request)==null)
@@ -56,7 +57,7 @@ public class BlogController {
 
     @PostMapping("/{blogId}/update")
     public Result<Boolean> updateBlog(@PathVariable("blogId") Long blogId,
-                                      @RequestBody BlogAddRequest blogAddRequest,
+                                      @RequestBody @Valid BlogAddRequest blogAddRequest,
                                       HttpServletRequest request) {
         if (blogAddRequest == null) {
             throw new BusinessException(ResultType.PARAM_ERROR, "参数错误");

@@ -1,10 +1,12 @@
 package com.usst.thumbs.service;
 
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.UserUpdateRequest;
 import com.usst.thumbs.model.vo.UserProfileVO;
+import com.usst.thumbs.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
@@ -31,4 +33,6 @@ public interface UserService extends IService<User> {
     Boolean banUser(Long userId, HttpServletRequest request);
 
     Boolean unBanUser(Long userId,HttpServletRequest request);
+
+    Page<UserVO> userList(Integer pageNo, Integer pageSize, HttpServletRequest request);
 }
