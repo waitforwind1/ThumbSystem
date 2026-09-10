@@ -9,4 +9,5 @@ public class ShareRequest implements Serializable {
     private Long blogId;
     private String url;
     private String path;
+    private Long targetUserId;
 }

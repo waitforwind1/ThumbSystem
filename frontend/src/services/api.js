@@ -60,12 +60,15 @@ export const api = {
   banUser: userId => request(`/user/admin/ban/${userId}`, { method: 'POST' }),
   unbanUser: userId => request(`/user/admin/unban/${userId}`, { method: 'POST' }),
   uploadImage: file => upload('/file/upload', file),
+  // 文章封面统一由 FileService 接收，压缩后上传腾讯云 COS 并返回 CDN 地址。
+  uploadCoverToCos: file => upload('/file/upload', file),
   downloadRemoteImage: imageUrl => json('/file/downloadRemoteImage', { imageUrl }),
 
   blogs: (pageNo = 1, pageSize = 10) => request(`/blog/getBlog?pageNo=${pageNo}&pageSize=${pageSize}`),
   hot: (limit = 10) => request(`/hot/list?limit=${limit}`),
   hotByCategory: (category, limit = 10) => request(`/hot/category?category=${encodeURIComponent(category)}&limit=${limit}`),
   search: data => json('/blog/search', data),
+  esSearch: data => json('/blog/es/search/blog', data),
   authorBlogs: (userId, pageNo = 1, pageSize = 10) => request(`/blog/author/${userId}?pageNo=${pageNo}&pageSize=${pageSize}`),
   addBlog: data => json('/blog/add', data),
   updateBlog: (blogId, data) => json(`/blog/${blogId}/update`, data),

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.MessageConstant;
 import com.usst.thumbs.common.UserConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.MessageMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.DTO.InteractionEventDTO;
@@ -63,7 +63,6 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     @Override
     public void createReplyMessage(InteractionEventDTO event) {
         User user = userService.getById(event.getUserId());
-
         createInteractionMessage(event, MessageConstant.TYPE_REPLY, "回复通知", "用户"+user.getUsername()+"回复了你的评论");
     }
 
@@ -207,10 +206,10 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
         if(!removed)
             throw new BusinessException(ResultType.DATABASE_ERROR,"删除失败");
         if(message.getIsRead().equals(MessageConstant.UNREAD)){
-            String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(messageId);
+            String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(message.getReceiverId());
             Object value = redisTemplate.opsForValue().get(key);
             if(value!=null && Long.parseLong(value.toString())>0){
-                redisTemplate.opsForValue().decrement(MessageConstant.MESSAGE_UNREAD_KEY.formatted(messageId));
+                redisTemplate.opsForValue().decrement(key);
             }
         }
         return true;

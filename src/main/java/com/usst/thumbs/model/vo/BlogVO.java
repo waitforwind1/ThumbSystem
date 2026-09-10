@@ -24,6 +24,11 @@ public class BlogVO {
     private String tag;
     private String summary;
 
+    /** Elasticsearch 返回的展示片段，不覆盖文章原始字段。 */
+    private String highlightTitle;
+    private String highlightContent;
+    private String highlightSummary;
+
 
     private Long thumbCount;
     private Long viewCount;

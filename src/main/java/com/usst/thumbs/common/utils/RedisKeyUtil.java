@@ -1,4 +1,4 @@
-package com.usst.thumbs.utils;
+package com.usst.thumbs.common.utils;
 
 import com.usst.thumbs.common.ThumbConstant;
 

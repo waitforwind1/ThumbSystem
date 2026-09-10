@@ -1,4 +1,4 @@
-package com.usst.thumbs.config;
+package com.usst.thumbs.config.rabbitmqConfig;
 
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;

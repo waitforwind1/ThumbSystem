@@ -1,7 +1,7 @@
 package com.usst.thumbs.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.UserUpdateRequest;

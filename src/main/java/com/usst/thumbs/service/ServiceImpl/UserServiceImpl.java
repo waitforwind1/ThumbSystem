@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.UserConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.UserMapper;
 import com.usst.thumbs.model.Blog;

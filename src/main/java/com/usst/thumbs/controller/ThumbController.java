@@ -3,7 +3,7 @@ package com.usst.thumbs.controller;
 import com.usst.thumbs.result.Result;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.result.ResultUtils;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.request.DoThumbRequest;
 import com.usst.thumbs.service.ThumbService;
 import io.swagger.v3.oas.annotations.tags.Tag;

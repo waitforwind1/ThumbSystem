@@ -1,11 +1,12 @@
 package com.usst.thumbs.controller;
 
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.request.RemoteImageDownloadRequest;
 import com.usst.thumbs.result.Result;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.result.ResultUtils;
 import com.usst.thumbs.service.FileService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,10 @@ public class FileController {
     private final FileService fileService;
 
     @PostMapping("/upload")
-    public Result<String> uploadImage(@RequestPart("file") MultipartFile file){
+    public Result<String> uploadImage(@RequestPart("file") MultipartFile file, HttpServletRequest request){
         if(file.isEmpty())
             throw new BusinessException(ResultType.PARAM_ERROR,"上传为空");
-        return ResultUtils.success(fileService.uploadImage(file));
+        return ResultUtils.success(fileService.uploadImage(file,request));
     }
 
     @PostMapping("/downloadRemoteImage")

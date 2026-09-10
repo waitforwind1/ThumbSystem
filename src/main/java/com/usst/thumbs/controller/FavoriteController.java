@@ -1,6 +1,6 @@
 package com.usst.thumbs.controller;
 
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.request.DoFavoriteRequest;
 import com.usst.thumbs.result.Result;
 import com.usst.thumbs.result.ResultType;

@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.BlogConstant;
 import com.usst.thumbs.common.CommentConstant;
 import com.usst.thumbs.common.UserConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.CommentMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Comment;
@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +57,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
     private UserService userService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean postComment(PostCommentRequest postCommentRequest, HttpServletRequest request) {
         if(postCommentRequest==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
@@ -81,14 +84,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                 .replyUserId(null)
                 .build();
         boolean saved = this.save(comment);
-        boolean updated = blogService.lambdaUpdate()
-                .eq(Blog::getId, blogId)
-                .setSql("comment_count = comment_count+1")
-                .update();
-        if(!updated || !saved)
+        if(!saved)
             throw new BusinessException(ResultType.DATABASE_ERROR,"评论发表失败");
-        removeFirstPageCache(blogId);
-        interactionEventService.saveCommentEvent(userId, blogId, blog.getUserId(), comment.getId());
+        interactionEventService.saveCommentEvent(
+                UUID.randomUUID().toString().replace("-", ""),
+                userId, blogId, blog.getUserId(), comment.getId());
+        refreshCommentCacheAfterCommit(blogId);
         return true;
     }
 
@@ -100,10 +101,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         if(StrUtil.isBlank(replyCommentRequest.getContent()))
             throw new BusinessException(ResultType.PARAM_ERROR,"回复内容为空");
         Blog blog = blogService.getById(replyCommentRequest.getBlogId());
-        if(blog==null)
+        if(blog==null || !Integer.valueOf(BlogConstant.BLOG_STATUS_PUBLISHED).equals(blog.getStatus()))
             throw new BusinessException(ResultType.NOT_FOUND,"内容不存在");
         Comment parent = this.getById(replyCommentRequest.getParentId());
-        if (parent == null) {
+        if (parent == null || !blog.getId().equals(parent.getBlogId())
+                || !Integer.valueOf(CommentConstant.COMMENT_NO_DELETE).equals(parent.getStatus())) {
             throw new BusinessException(ResultType.PARAM_ERROR, "被回复评论不存在");
         }
         User loginUser = getLoginUser(request);
@@ -119,14 +121,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                 .isDelete(0)
                 .build();
         boolean saved = this.save(comment);
-        boolean updated = blogService.lambdaUpdate()
-                .eq(Blog::getId,blogId)
-                .setSql("comment_count = comment_count+1")
-                .update();
-        if(!saved || !updated)
+        if(!saved)
             throw new BusinessException(ResultType.DATABASE_ERROR,"回复评论失败");
-        removeFirstPageCache(blogId);
-        interactionEventService.saveCommentEvent(loginUser.getId(),blogId,parent.getUserId(),comment.getId());
+        interactionEventService.saveReplyEvent(
+                UUID.randomUUID().toString().replace("-", ""),
+                loginUser.getId(), blogId, parent.getUserId(), comment.getId());
+        refreshCommentCacheAfterCommit(blogId);
         return true;
     }
 
@@ -135,14 +135,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
     public List<CommentVO> pageComment(Long blogId, Integer pageNo, Integer pageSize) {
         if(blogId==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
-        Blog one = blogService.lambdaQuery().eq(Blog::getId, blogId).eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED).one();
-        if(one==null)
+        Blog blog = blogService.lambdaQuery()
+                .eq(Blog::getId, blogId)
+                .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)
+                .one();
+        if(blog==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"博客不存在，刷新后查看");
         int current = pageNo==null || pageNo<=0 ?CommentConstant.DEFAULT_PAGE_NO:pageNo;
         int size = pageSize==null || pageSize<=0 ?CommentConstant.DEFAULT_PAGE_SIZE:pageSize;
         if(size>=CommentConstant.MAX_PAGE_SIZE)
             size = CommentConstant.MAX_PAGE_SIZE;
-        String key = CommentConstant.BLOG_COMMENT_FIRST_PAGE_KEY.formatted(blogId);
+        String key = CommentConstant.BLOG_COMMENT_FIRST_PAGE_KEY.formatted(blogId, size);
         if(current==1){
             Object object = redisTemplate.opsForValue().get(key);
             if(object instanceof List<?> list){
@@ -152,11 +155,28 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                         .toList();
             }
         }
+
         Page<Comment> page = new Page<>(current,size);
         Page<Comment> commentPage = this.page(page,new LambdaQueryWrapper<Comment>()
                 .eq(Comment::getBlogId,blogId)
+                .eq(Comment::getRootId, 0L)
+                .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
                 .orderByDesc(Comment::getCreateTime));
-        List<CommentVO> result = buildCommentTree(commentPage.getRecords());
+        List<Comment> roots = commentPage.getRecords();
+        if (roots.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> rootIds = roots.stream().map(Comment::getId).toList();
+        List<Comment> replies = this.list(
+                new LambdaQueryWrapper<Comment>()
+                    .in(Comment::getRootId, rootIds)
+                    .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
+                    .orderByAsc(Comment::getCreateTime)
+        );
+        List<Comment> comments = new ArrayList<>(roots.size() + replies.size());
+        comments.addAll(roots);
+        comments.addAll(replies);
+        List<CommentVO> result = buildCommentTree(comments);
         if(current==1){
             redisTemplate.opsForValue().set(key,result, CommentConstant.COMMENT_FIRST_PAGE_TTL, TimeUnit.MINUTES);
         }
@@ -165,7 +185,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 
     // 删除评论
     @Override
-    public Boolean deleteComment(Long commentId, HttpServletRequest httpRequest) {
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean deleteComment(Long commentId,HttpServletRequest httpRequest) {
         if(httpRequest==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         if( commentId==null || commentId<=0)
@@ -176,21 +197,24 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         Comment comment = this.getById(commentId);
         if(comment==null)
             throw new BusinessException(ResultType.NOT_FOUND,"评论不存在,刷新后查看");
+        if (Integer.valueOf(CommentConstant.COMMENT_IS_DELETE).equals(comment.getStatus())) {
+            throw new BusinessException(ResultType.PARAM_ERROR, "评论已经删除");
+        }
         // 校验用户是否是当前评论的作者  以及是否是管理员
         if(!loginUser.getId().equals(comment.getUserId()) && !loginUser.getIsAdmin().equals(UserConstant.USER_IS_ADMIN))
             throw new BusinessException(ResultType.NO_AUTH,"没有删除权限");
         boolean updated = this.lambdaUpdate()
                 .eq(Comment::getId, commentId)
+                .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
                 .set(Comment::getStatus, CommentConstant.COMMENT_IS_DELETE)
                 .set(Comment::getContent,"该评论已删除")
                 .update();
         if(!updated)
             throw new BusinessException(ResultType.PARAM_ERROR,"删除评论失败");
-        blogService.lambdaUpdate()
-                .eq(Blog::getId, comment.getBlogId())
-                .setSql("comment_count = GREATEST(comment_count -1,0)")
-                .update();
-        removeFirstPageCache(comment.getBlogId());
+        interactionEventService.saveCommentDeleteEvent(
+                UUID.randomUUID().toString().replace("-", ""),
+                comment.getBlogId());
+        refreshCommentCacheAfterCommit(comment.getBlogId());
         return true;
     }
 
@@ -198,11 +222,13 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
     public List<CommentVO> pageRootComments(Long blogId,Integer pageNo,Integer pageSize) {
         if(blogId==null || blogId<0)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数不合法");
-        int current = pageNo==null || pageNo<0?1:pageNo;
-        int size = pageSize==null||pageSize<0?10:Math.min(pageSize,50);
+        int current = pageNo==null || pageNo<=0?1:pageNo;
+        int size = pageSize==null||pageSize<=0?10:Math.min(pageSize,50);
         Page<Comment> page = new Page<>(current,size);
         LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<Comment>()
-                .eq(Comment::getRootId, blogId)
+                .eq(Comment::getBlogId, blogId)
+                .eq(Comment::getRootId, 0L)
+                .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
                 .orderByDesc(Comment::getCreateTime);
         Page<Comment> commentPage = this.page(page, queryWrapper);
         List<Comment> commentList = commentPage.getRecords();
@@ -220,8 +246,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         int size = pageSize == null || pageSize <= 0 ? 10 : Math.min(pageSize, 50);
         Page<Comment> page = this.page(new Page<>(current, size), new LambdaQueryWrapper<Comment>()
                 .eq(Comment::getRootId, rootId)
+                .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
                 .orderByAsc(Comment::getCreateTime));
-        return toCommentVO(page.getRecords());
+        return page.getRecords().stream().map(this::toSingleCommentVO).toList();
     }
 
     /**
@@ -267,10 +294,24 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         return root;
     }
 
-    private void removeFirstPageCache(Long blogId){
-        String key = CommentConstant.BLOG_COMMENT_FIRST_PAGE_KEY.formatted(blogId);
-        redisTemplate.delete(key);
+    private void refreshCommentCacheAfterCommit(Long blogId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                for (int size : List.of(10, 20, 50)) {
+                    String pageOneKey = BlogConstant.BLOG_PAGE_KEY.formatted(1, size);
+                    String pageTwoKey = BlogConstant.BLOG_PAGE_KEY.formatted(2, size);
+                    redisTemplate.delete(pageOneKey);
+                    redisTemplate.delete(pageTwoKey);
+                }
+                for (int size : List.of(10, 20, 50)) {
+                    redisTemplate.delete(CommentConstant.BLOG_COMMENT_FIRST_PAGE_KEY.formatted(blogId, size));
+                }
+                redisTemplate.delete(BlogConstant.BLOG_DETAIL_KEY.formatted(blogId));
+            }
+        });
     }
+
 
     private List<CommentVO> toCommentVO(List<Comment> commentList){
         List<CommentVO> commentVOS = new ArrayList<>();
@@ -298,6 +339,24 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
             }
         }
         return commentVOS;
+    }
+
+    private CommentVO toSingleCommentVO(Comment comment) {
+        User user = userService.getById(comment.getUserId());
+        User replyUser = comment.getReplyUserId() == null ? null : userService.getById(comment.getReplyUserId());
+        return CommentVO.builder()
+                .id(comment.getId())
+                .userId(comment.getUserId())
+                .username(user == null ? null : user.getUsername())
+                .avatar(user == null ? null : user.getAvatar())
+                .blogId(comment.getBlogId())
+                .replyUserId(comment.getReplyUserId())
+                .replyUsername(replyUser == null ? null : replyUser.getUsername())
+                .rootId(comment.getRootId())
+                .parentId(comment.getParentId())
+                .content(comment.getContent())
+                .crteateTime(comment.getCreateTime())
+                .build();
     }
 
     private User getLoginUser(HttpServletRequest request){

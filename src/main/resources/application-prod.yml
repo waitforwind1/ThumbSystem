@@ -11,19 +11,6 @@ spring:
       port: 6379
       password: ${REDIS_PASSWORD}
 
-  rabbitmq:
-    username: guest
-    password: ${RABBITMQ_PASSWORD}
-    host: rabbitmq
-    port: 5672
-    virtual-host: /
-    publisher-returns: true
-    publisher-confirm-type: correlated
-    listener:
-      simple:
-        acknowledge-mode: manual
-        retry:
-          max-attempts: 3
 
   elasticsearch:
     uris: http://thumbs-elasticsearch:9200
@@ -38,6 +25,6 @@ springdoc:
 
 app:
   upload:
-    dir: /home/ubuntu/thumbs/uploads
+    dir: /home/ubuntu/thumbs/upload
     url-prefix: /upload
 

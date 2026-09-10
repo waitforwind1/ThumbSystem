@@ -3,7 +3,8 @@ spring:
     name: Thumbs
   profiles:
     active: local
-
+  elasticsearch:
+    uris: http://localhost:9200
 
 mybatis-plus:
   global-config:
@@ -18,5 +19,13 @@ server:
       timeout: 1h
     context-path: /api
   port: 8082
+
+thumbs:
+  jobs:
+    interaction-stream-cleanup:
+      cron: "0 45 3 * * *"
+    interaction-count-reconcile:
+      enabled: true
+      cron: "0 30 3 * * *"
 
 

@@ -20,6 +20,14 @@ import java.util.List;
 @Service
 public interface BlogService extends IService<Blog> {
 
+     /**
+      * es插入文章数据
+      * @param blog
+      * @param request
+      * @return
+      */
+     Boolean addBlog(Blog blog,HttpServletRequest request);
+
      Boolean writeBlog(BlogAddRequest blogAddRequest,HttpServletRequest request);
      Boolean updateBlog(Long blogId, BlogAddRequest blogAddRequest, HttpServletRequest request);
      Boolean updateBlogStatus(Long blogId, Integer status, HttpServletRequest request);

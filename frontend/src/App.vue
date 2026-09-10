@@ -128,7 +128,8 @@
                   <button v-if="blog.category" type="button" @click.stop="filterByCategory(blog.category)">{{ blog.category }}</button>
                   <button v-for="tag in splitTags(blog.tag).slice(0, 2)" :key="`${blog.id}-${tag}`" type="button" @click.stop="filterByTag(tag)">{{ tag }}</button>
                 </div>
-                <h2>{{ blog.title || '未命名文章' }}</h2>
+                <h2 v-html="renderSearchHighlight(blog.highlightTitle || blog.title || '未命名文章')"></h2>
+                <p v-html="renderSearchHighlight(blog.highlightSummary || blog.highlightContent || blog.summary || excerpt(blog.content, 70))"></p>
               </div>
               <footer class="post-footer" @click.stop>
                 <button class="author-chip" type="button" @click="openAuthor(blog)">
@@ -201,7 +202,7 @@
       <section v-else-if="activeView === 'hot'" class="hot-page">
         <header class="section-hero">
           <div>
-            <p class="eyebrow">Product Hunt 风热榜</p>
+            <p class="eyebrow">社区趋势</p>
             <h1>社区热榜</h1>
             <span>按热度、点赞和互动发现值得阅读的内容。</span>
           </div>
@@ -273,6 +274,14 @@
               </div>
             </button>
           </header>
+          <figure v-if="selectedBlog.coverImage && !selectedBlog.coverBroken" class="article-cover">
+            <img
+              :src="normalizeImageUrl(selectedBlog.coverImage)"
+              :alt="`${selectedBlog.title || '文章'}封面`"
+              decoding="async"
+              @error="markCoverBroken(selectedBlog)"
+            />
+          </figure>
           <div class="article-actions">
             <button :class="{ active: selectedBlog.hasThumb }" type="button" @click="toggleThumb(selectedBlog)">
               <ThumbsUp :size="17" /> {{ selectedBlog.thumbCount || 0 }}
@@ -339,48 +348,67 @@
           </div>
         </header>
         <form class="editor-card" @submit.prevent="publishBlog">
-          <label>
-            <span>标题</span>
-            <input v-model.trim="blogForm.title" placeholder="例如：Redis 点赞状态一致性问题复盘" />
-          </label>
-          <label>
-            <span>分类</span>
-            <input v-model.trim="blogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
-          </label>
-          <div class="cover-field">
-            <span>封面图片</span>
-            <div class="cover-picker">
-              <label class="cover-file-button">
-                <ImagePlus :size="16" />
-                <span>{{ blogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
-                <input type="file" accept="image/*" @change="handleCoverFileChange('compose', $event)" />
+          <section class="editor-section">
+            <header class="editor-section-head">
+              <span>01</span>
+              <div><h2>基础信息</h2><small>让读者快速理解文章主题</small></div>
+            </header>
+            <label>
+              <span>标题</span>
+              <input v-model.trim="blogForm.title" placeholder="例如：Redis 点赞状态一致性问题复盘" />
+            </label>
+            <div class="editor-meta-grid">
+              <label>
+                <span>分类</span>
+                <input v-model.trim="blogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
               </label>
-              <label class="cover-url-input">
-                <Link :size="16" />
-                <input v-model.trim="blogForm.coverImage" placeholder="或粘贴图片 URL，发布时自动下载到本地" />
+              <label>
+                <span>标签</span>
+                <input v-model.trim="tagInput" placeholder="Redis, Vue, Spring Boot" />
               </label>
             </div>
-            <div v-if="blogCoverFile || blogForm.coverImage" class="cover-preview">
-              <img :src="blogCoverPreview || normalizeImageUrl(blogForm.coverImage)" alt="文章封面预览" decoding="async" />
-              <div>
-                <strong>{{ blogCoverFile ? blogCoverFile.name : '远程封面预览' }}</strong>
-                <span>{{ blogCoverFile ? '发布时会自动压缩并上传到服务器' : '发布时会下载到服务器本地' }}</span>
-                <button v-if="blogCoverFile" type="button" @click="clearCoverFile('compose')">移除本地图片</button>
+            <label>
+              <span>摘要</span>
+              <input v-model.trim="blogForm.summary" placeholder="用一句话说明这篇文章解决了什么问题" />
+            </label>
+          </section>
+          <section class="editor-section">
+            <header class="editor-section-head">
+              <span>02</span>
+              <div><h2>文章封面</h2><small>建议使用简洁清晰的横向图片</small></div>
+            </header>
+            <div class="cover-field">
+              <div class="cover-picker">
+                <label class="cover-file-button">
+                  <ImagePlus :size="16" />
+                  <span>{{ blogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
+                  <input type="file" accept="image/*" @change="handleCoverFileChange('compose', $event)" />
+                </label>
+                <label class="cover-url-input">
+                  <Link :size="16" />
+                  <input v-model.trim="blogForm.coverImage" placeholder="或粘贴图片 URL，发布时自动下载到本地" />
+                </label>
+              </div>
+              <div v-if="blogCoverFile || blogForm.coverImage" class="cover-preview">
+                <img :src="blogCoverPreview || normalizeImageUrl(blogForm.coverImage)" alt="文章封面预览" decoding="async" />
+                <div>
+                  <strong>{{ blogCoverFile ? blogCoverFile.name : '远程封面预览' }}</strong>
+                  <span>{{ blogCoverFile ? '发布时会自动压缩并上传到服务器' : '发布时会下载到服务器本地' }}</span>
+                  <button v-if="blogCoverFile" type="button" @click="clearCoverFile('compose')">移除本地图片</button>
+                </div>
               </div>
             </div>
-          </div>
-          <label>
-            <span>摘要</span>
-            <input v-model.trim="blogForm.summary" placeholder="用一句话说明这篇文章解决了什么问题" />
-          </label>
-          <label>
-            <span>标签</span>
-            <input v-model.trim="tagInput" placeholder="用逗号分隔，例如 Redis, Vue, Spring Boot" />
-          </label>
-          <label>
-            <span>正文</span>
-            <textarea v-model.trim="blogForm.content" rows="16" placeholder="从背景、问题、方案、结果几个部分展开。"></textarea>
-          </label>
+          </section>
+          <section class="editor-section editor-content-section">
+            <header class="editor-section-head">
+              <span>03</span>
+              <div><h2>正文内容</h2><small>建议按背景、问题、方案和结果展开</small></div>
+            </header>
+            <label>
+              <span class="sr-only">正文</span>
+              <textarea v-model.trim="blogForm.content" rows="16" placeholder="从这里开始写作……"></textarea>
+            </label>
+          </section>
           <div class="editor-actions">
             <button class="button subtle" type="button" @click="resetBlogForm">
               <X :size="16" /> 清空
@@ -415,12 +443,26 @@
                 <span>昵称</span>
                 <input v-model.trim="profileForm.username" placeholder="请输入昵称" />
               </label>
-              <label>
-                <span>头像 URL</span>
-                <input v-model.trim="profileForm.avatar" placeholder="https://example.com/avatar.png" />
-              </label>
-              <button class="button primary" type="submit">
-                <Save :size="16" /> 保存资料
+              <div class="avatar-upload-field">
+                <span class="field-label">头像</span>
+                <div class="avatar-upload-row">
+                  <div class="avatar-preview" aria-hidden="true">
+                    <img v-if="avatarPreview || profileForm.avatar" :src="avatarPreview || normalizeImageUrl(profileForm.avatar)" alt="" />
+                    <span v-else>{{ avatarText }}</span>
+                  </div>
+                  <div class="avatar-upload-copy">
+                    <label class="avatar-file-button">
+                      <ImagePlus :size="17" />
+                      <span>{{ avatarFile ? '重新选择头像' : '上传头像' }}</span>
+                      <input type="file" accept="image/png,image/jpeg,image/webp" @change="handleAvatarFileChange" />
+                    </label>
+                    <small>支持 JPG、PNG、WebP，建议使用清晰的正方形图片</small>
+                    <button v-if="avatarFile" type="button" class="avatar-cancel" @click="clearAvatarSelection">取消选择</button>
+                  </div>
+                </div>
+              </div>
+              <button class="button primary" type="submit" :disabled="isUpdatingProfile">
+                <Save :size="16" /> {{ isUpdatingProfile ? '保存中...' : '保存资料' }}
               </button>
             </form>
             <div v-else class="profile-guest">
@@ -512,48 +554,67 @@
           </button>
         </header>
         <form class="editor-card" @submit.prevent="updateBlog">
-          <label>
-            <span>标题</span>
-            <input v-model.trim="editBlogForm.title" placeholder="请输入标题" />
-          </label>
-          <label>
-            <span>分类</span>
-            <input v-model.trim="editBlogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
-          </label>
-          <div class="cover-field">
-            <span>封面图片</span>
-            <div class="cover-picker">
-              <label class="cover-file-button">
-                <ImagePlus :size="16" />
-                <span>{{ editBlogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
-                <input type="file" accept="image/*" @change="handleCoverFileChange('edit', $event)" />
+          <section class="editor-section">
+            <header class="editor-section-head">
+              <span>01</span>
+              <div><h2>基础信息</h2><small>调整标题、分类和检索信息</small></div>
+            </header>
+            <label>
+              <span>标题</span>
+              <input v-model.trim="editBlogForm.title" placeholder="请输入标题" />
+            </label>
+            <div class="editor-meta-grid">
+              <label>
+                <span>分类</span>
+                <input v-model.trim="editBlogForm.category" placeholder="技术 / 项目 / 学习 / 生活" />
               </label>
-              <label class="cover-url-input">
-                <Link :size="16" />
-                <input v-model.trim="editBlogForm.coverImage" placeholder="或粘贴图片 URL，保存时自动下载到本地" />
+              <label>
+                <span>标签</span>
+                <input v-model.trim="editTagInput" placeholder="Redis, Vue, Spring Boot" />
               </label>
             </div>
-            <div v-if="editBlogCoverFile || editBlogForm.coverImage" class="cover-preview">
-              <img :src="editBlogCoverPreview || normalizeImageUrl(editBlogForm.coverImage)" alt="文章封面预览" decoding="async" />
-              <div>
-                <strong>{{ editBlogCoverFile ? editBlogCoverFile.name : '当前封面预览' }}</strong>
-                <span>{{ editBlogCoverFile ? '保存时会自动压缩并上传到服务器' : '远程地址保存时会下载到服务器本地' }}</span>
-                <button v-if="editBlogCoverFile" type="button" @click="clearCoverFile('edit')">移除本地图片</button>
+            <label>
+              <span>摘要</span>
+              <input v-model.trim="editBlogForm.summary" placeholder="用一句话概括文章内容" />
+            </label>
+          </section>
+          <section class="editor-section">
+            <header class="editor-section-head">
+              <span>02</span>
+              <div><h2>文章封面</h2><small>保留现有封面，或选择新的横向图片</small></div>
+            </header>
+            <div class="cover-field">
+              <div class="cover-picker">
+                <label class="cover-file-button">
+                  <ImagePlus :size="16" />
+                  <span>{{ editBlogCoverFile ? '已选择本地图片' : '选择本地图片' }}</span>
+                  <input type="file" accept="image/*" @change="handleCoverFileChange('edit', $event)" />
+                </label>
+                <label class="cover-url-input">
+                  <Link :size="16" />
+                  <input v-model.trim="editBlogForm.coverImage" placeholder="或粘贴图片 URL，保存时自动下载到本地" />
+                </label>
+              </div>
+              <div v-if="editBlogCoverFile || editBlogForm.coverImage" class="cover-preview">
+                <img :src="editBlogCoverPreview || normalizeImageUrl(editBlogForm.coverImage)" alt="文章封面预览" decoding="async" />
+                <div>
+                  <strong>{{ editBlogCoverFile ? editBlogCoverFile.name : '当前封面预览' }}</strong>
+                  <span>{{ editBlogCoverFile ? '保存时会自动压缩并上传到服务器' : '远程地址保存时会下载到服务器本地' }}</span>
+                  <button v-if="editBlogCoverFile" type="button" @click="clearCoverFile('edit')">移除本地图片</button>
+                </div>
               </div>
             </div>
-          </div>
-          <label>
-            <span>摘要</span>
-            <input v-model.trim="editBlogForm.summary" placeholder="文章摘要" />
-          </label>
-          <label>
-            <span>标签</span>
-            <input v-model.trim="editTagInput" placeholder="用逗号分隔，例如 Redis, Vue" />
-          </label>
-          <label>
-            <span>正文</span>
-            <textarea v-model.trim="editBlogForm.content" rows="16" placeholder="文章正文"></textarea>
-          </label>
+          </section>
+          <section class="editor-section editor-content-section">
+            <header class="editor-section-head">
+              <span>03</span>
+              <div><h2>正文内容</h2><small>检查段落层次与表达是否清晰</small></div>
+            </header>
+            <label>
+              <span class="sr-only">正文</span>
+              <textarea v-model.trim="editBlogForm.content" rows="16" placeholder="文章正文"></textarea>
+            </label>
+          </section>
           <div class="editor-actions">
             <button class="button subtle" type="button" @click="cancelEditBlog">
               <X :size="16" /> 取消
@@ -854,6 +915,9 @@ const editBlogCoverFile = ref(null)
 const blogCoverPreview = ref('')
 const editBlogCoverPreview = ref('')
 const isSubmittingBlog = ref(false)
+const avatarFile = ref(null)
+const avatarPreview = ref('')
+const isUpdatingProfile = ref(false)
 
 const authForm = reactive({ account: '', password: '', checkPassword: '' })
 const profileForm = reactive({ username: '', avatar: '' })
@@ -1020,6 +1084,7 @@ async function logout() {
     try {
       await api.logout()
     } finally {
+      clearAvatarSelection()
       setCurrentUser(null)
     }
     messages.value = []
@@ -1115,13 +1180,16 @@ async function runSearch() {
     activeView.value = 'home'
     lastListView.value = 'home'
     pageNo.value = 1
-    const blogs = await api.search({
+    const searchPayload = {
       keyWord: searchForm.keyWord,
       tag: selectedTag.value || searchForm.tag,
       category: searchForm.category,
       pageNo: 1,
       pageSize: 50
-    })
+    }
+    const blogs = searchForm.keyWord
+      ? await api.esSearch(searchPayload)
+      : await api.search(searchPayload)
     blogPool.value = Array.isArray(blogs) ? blogs : []
     blogList.value = sliceCurrentBlogPage(blogPool.value)
     await hydrateBlogStatuses(blogList.value)
@@ -1195,6 +1263,29 @@ function clearCoverFile(mode) {
   revokeObjectUrl(previewRef.value)
   fileRef.value = null
   previewRef.value = ''
+}
+
+function handleAvatarFileChange(event) {
+  const file = event.target.files?.[0] || null
+  event.target.value = ''
+  if (!file) return
+  if (!file.type?.startsWith('image/')) {
+    show('请选择 JPG、PNG 或 WebP 图片', 'error')
+    return
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    show('头像图片不能超过 8MB', 'error')
+    return
+  }
+  clearAvatarSelection()
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+}
+
+function clearAvatarSelection() {
+  revokeObjectUrl(avatarPreview.value)
+  avatarFile.value = null
+  avatarPreview.value = ''
 }
 
 function revokeObjectUrl(url) {
@@ -1420,15 +1511,36 @@ function flattenComments(list, depth = 0, result = []) {
 }
 
 async function updateProfile() {
-  if (!currentUser.value) return
+  if (!currentUser.value || isUpdatingProfile.value) return
   await guarded(async () => {
-    await api.updateProfile({
-      newUserName: profileForm.username || null,
-      newAvatar: profileForm.avatar || null
-    })
-    setCurrentUser(await api.current())
-    await refreshBlogs()
+    isUpdatingProfile.value = true
+    try {
+      let avatar = profileForm.avatar || null
+      if (avatarFile.value) {
+        const uploadFile = await prepareAvatarFile(avatarFile.value)
+        avatar = await api.uploadImage(uploadFile)
+      }
+      await api.updateProfile({
+        newUserName: profileForm.username || null,
+        newAvatar: avatar
+      })
+      clearAvatarSelection()
+      setCurrentUser(await api.current())
+      await refreshBlogs()
+    } finally {
+      isUpdatingProfile.value = false
+    }
   }, '资料已保存')
+}
+
+async function prepareAvatarFile(file) {
+  const maxUploadBytes = 600 * 1024
+  if (file.size <= maxUploadBytes) return file
+  const compressed = await compressImage(file, maxUploadBytes)
+  if (compressed.size > maxUploadBytes) {
+    throw new Error('头像图片过大，请换一张更小的图片')
+  }
+  return compressed
 }
 
 async function loadFavorites() {
@@ -1661,6 +1773,21 @@ function splitTags(value) {
 
 function markCoverBroken(blog) {
   if (blog) blog.coverBroken = true
+}
+
+function renderSearchHighlight(value) {
+  return escapeHtml(String(value || ''))
+    .replace(/&lt;em&gt;/gi, '<mark class="search-highlight">')
+    .replace(/&lt;\/em&gt;/gi, '</mark>')
+}
+
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
 
 function getInitial(value) {

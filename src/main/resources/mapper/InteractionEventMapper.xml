@@ -25,4 +25,5 @@
         type,action,status,retry_count,error_msg,
         create_time,update_time
     </sql>
+
 </mapper>

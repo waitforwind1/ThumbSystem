@@ -33,7 +33,7 @@ public class HotListRefresh {
                 .list();
         for (Blog blog : blogList) {
             Double score = hotService.calculateHotScore(blog);
-            redisTemplate.opsForZSet().add(HotConstant.HOT_LOCAL_KEY,blog.getId().toString(),score);
+            redisTemplate.opsForZSet().add(HotConstant.HOT_CONTENT_KEY,blog.getId().toString(),score);
             blogService.lambdaUpdate()
                     .eq(Blog::getId,blog.getId())
                     .set(Blog::getHotScore,score)

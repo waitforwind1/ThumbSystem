@@ -2,30 +2,26 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.usst.thumbs.common.BlogConstant;
 import com.usst.thumbs.common.FavoriteConstant;
-import com.usst.thumbs.common.RedisLuaScriptConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.InteractionEventConstant;
+import com.usst.thumbs.common.redis.InteractionStreamConstant;
+import com.usst.thumbs.common.redis.RedisLuaScriptConstant;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.FavoriteMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Favorite;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.DoFavoriteRequest;
-import com.usst.thumbs.model.vo.BlogVO;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.FavoriteService;
-import com.usst.thumbs.service.InteractionEventService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.usst.thumbs.common.CommonConstant.DUPLICATE_RES;
@@ -42,16 +38,12 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
 
     private final BlogMapper blogMapper;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final InteractionEventService interactionEventService;
-    private final Cache<String, BlogVO> blogDetailCache;
-    private final Cache<String, List<BlogVO>> blogPageCache;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    public FavoriteServiceImpl(BlogMapper blogMapper, RedisTemplate<String, Object> redisTemplate, InteractionEventService interactionEventService, @Qualifier("blogDetailCache") Cache<String ,BlogVO> blogDetailCache, @Qualifier("blogPageCache") Cache<String, List<BlogVO>> blogPageCache) {
+    public FavoriteServiceImpl(BlogMapper blogMapper, RedisTemplate<String, Object> redisTemplate, StringRedisTemplate stringRedisTemplate) {
         this.blogMapper = blogMapper;
         this.redisTemplate = redisTemplate;
-        this.interactionEventService = interactionEventService;
-        this.blogDetailCache = blogDetailCache;
-        this.blogPageCache = blogPageCache;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
@@ -60,20 +52,27 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
         User loginUser = getLoginUser(request);
         Long userId = loginUser.getId();
         Long blogId = doFavoriteRequest.getBlogId();
-        Blog blog = blogMapper.selectById(blogId);
+        Blog blog = findPublishedBlog(blogId);
         if(blog==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"内容不存在");
+            throw new BusinessException(ResultType.NOT_FOUND,"文章不存在或已下架");
+        ensureUserFavoriteStateLoaded(userId);
         String userFavoriteKey = FavoriteConstant.USER_FAVORITE_KEY.formatted(userId);
         String blogFavoriteCountKey = FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogId);
-        Long res = redisTemplate.execute(
-                RedisLuaScriptConstant.DO_FAVORITE_SCRIPT,
-                List.of(userFavoriteKey, blogFavoriteCountKey),
-                blogId
+        stringRedisTemplate.opsForValue().setIfAbsent(blogFavoriteCountKey, String.valueOf(blog.getFavoriteCount()));
+        String eventId = UUID.randomUUID().toString();
+        Long res = stringRedisTemplate.execute(
+                RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
+                List.of(userFavoriteKey,blogFavoriteCountKey,InteractionStreamConstant.STREAM_KEY),
+                eventId,
+                String.valueOf(userId),
+                String.valueOf(blogId),
+                String.valueOf(blog.getUserId()),
+                String.valueOf(InteractionEventConstant.FAVORITE_TYPE),
+                String.valueOf(InteractionEventConstant.ACTION_ADD),
+                String.valueOf(System.currentTimeMillis())
         );
         if(res.equals(DUPLICATE_RES))
             throw new BusinessException(ResultType.PARAM_ERROR,"已经收藏过啦");
-        interactionEventService.saveFavoriteEvent(userId, blogId, blog.getUserId(), FavoriteConstant.ACTION_ADD);
-        removeBlogCache(blogId);
         return true;
     }
 
@@ -83,20 +82,27 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
         User loginUser = getLoginUser(request);
         Long userId = loginUser.getId();
         Long blogId = doFavoriteRequest.getBlogId();
-        Blog blog = blogMapper.selectById(blogId);
+        Blog blog = findPublishedBlog(blogId);
         if(blog==null)
-            throw new BusinessException(ResultType.PARAM_ERROR,"内容不存在");
+            throw new BusinessException(ResultType.NOT_FOUND,"文章不存在或已下架");
+        ensureUserFavoriteStateLoaded(userId);
         String userFavoriteKey = FavoriteConstant.USER_FAVORITE_KEY.formatted(userId);
         String blogFavoriteCountKey = FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogId);
-        Long res = redisTemplate.execute(
-                RedisLuaScriptConstant.UNDO_FAVORITE_SCRIPT,
-                List.of(userFavoriteKey, blogFavoriteCountKey),
-                blogId
+        stringRedisTemplate.opsForValue().setIfAbsent(blogFavoriteCountKey, String.valueOf(blog.getFavoriteCount()));
+        String eventId = UUID.randomUUID().toString();
+        Long res = stringRedisTemplate.execute(
+                RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
+                List.of(userFavoriteKey,blogFavoriteCountKey, InteractionStreamConstant.STREAM_KEY),
+                eventId,
+                String.valueOf(userId),
+                String.valueOf(blogId),
+                String.valueOf(blog.getUserId()),
+                String.valueOf(InteractionEventConstant.FAVORITE_TYPE),
+                String.valueOf(InteractionEventConstant.ACTION_CANCEL),
+                String.valueOf(System.currentTimeMillis())
         );
         if(res.equals(DUPLICATE_RES))
             throw new BusinessException(ResultType.PARAM_ERROR,"还未收藏，不能取消😢😢😢");
-        interactionEventService.saveFavoriteEvent(userId, blogId, blog.getUserId(), FavoriteConstant.ACTION_CANCEL);
-        removeBlogCache(blogId);
         return true;
     }
 
@@ -104,8 +110,9 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
     public Boolean hasFavorite(Long userId,Long blogId) {
         if(userId==null || blogId==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
+        ensureUserFavoriteStateLoaded(userId);
         String key = FavoriteConstant.USER_FAVORITE_KEY.formatted(userId);
-        return redisTemplate.opsForHash().hasKey(key,blogId.toString());
+        return redisTemplate.opsForHash().hasKey(key, blogId.toString());
     }
 
     @Override
@@ -135,6 +142,13 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
     }
 
+    private Blog findPublishedBlog(Long blogId) {
+        return blogMapper.selectOne(new LambdaQueryWrapper<Blog>()
+                .eq(Blog::getId, blogId)
+                .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)
+                .eq(Blog::getIsDelete, 0));
+    }
+
     private User getLoginUser(HttpServletRequest request){
         if(request==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数为空");
@@ -145,17 +159,22 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
         throw new BusinessException(ResultType.NOT_LOGIN,"用户未登录");
     }
 
-    private void removeBlogCache(Long blogId) {
-        blogDetailCache.invalidate(BlogConstant.BLOG_DETAIL_LOCAL_KEY.formatted(blogId));
-        redisTemplate.delete(BlogConstant.BLOG_DETAIL_LOCAL_KEY.formatted(blogId));
-        for (int size : List.of(10, 20, 50)) {
-            String pageOneKey = BlogConstant.BLOG_PAGE_KEY.formatted(1, size);
-            String pageTwoKey = BlogConstant.BLOG_PAGE_KEY.formatted(2, size);
-            redisTemplate.delete(pageOneKey);
-            redisTemplate.delete(pageTwoKey);
-            blogPageCache.invalidate(pageOneKey);
-            blogPageCache.invalidate(pageTwoKey);
+    private void ensureUserFavoriteStateLoaded(Long userId) {
+        String readyKey = FavoriteConstant.USER_FAVORITE_STATE_READY_KEY.formatted(userId);
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(readyKey))) {
+            return;
         }
+        Map<Object, Object> historicalState = this.list(new LambdaQueryWrapper<Favorite>()
+                        .eq(Favorite::getUserId, userId))
+                .stream()
+                .collect(Collectors.toMap(
+                        favorite -> favorite.getBlogId().toString(),
+                        ignored -> "1",
+                        (left, right) -> left));
+        if (!historicalState.isEmpty()) {
+            redisTemplate.opsForHash().putAll(FavoriteConstant.USER_FAVORITE_KEY.formatted(userId), historicalState);
+        }
+        stringRedisTemplate.opsForValue().set(readyKey, "1");
     }
 }
 

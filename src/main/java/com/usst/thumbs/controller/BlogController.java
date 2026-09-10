@@ -2,9 +2,11 @@ package com.usst.thumbs.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.usst.thumbs.aop.RateLimit;
 import com.usst.thumbs.common.BlogConstant;
 import com.usst.thumbs.common.UserConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.enums.RateLimitType;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.User;
 import com.usst.thumbs.model.request.BlogAddRequest;
@@ -14,11 +16,13 @@ import com.usst.thumbs.model.vo.BlogVO;
 import com.usst.thumbs.result.Result;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.result.ResultUtils;
+import com.usst.thumbs.service.BlogSearchService;
 import com.usst.thumbs.service.BlogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +38,9 @@ public class BlogController {
     @Resource
     private  BlogService blogService;
 
+    @Autowired
+    private BlogSearchService blogSearchService;
+
     @PostMapping("add")
     public Result<Boolean> addBlog(@RequestBody @Valid BlogAddRequest blogAddRequest, HttpServletRequest request){
         if(blogAddRequest==null)
@@ -43,6 +50,12 @@ public class BlogController {
         return ResultUtils.success(ResultType.SUCCESS,blogService.writeBlog(blogAddRequest,request),"发布成功");
     }
 
+    @RateLimit(
+            key = "blog:page",
+            rate = 1000,
+            interval = 1,
+            type = RateLimitType.GLOBAL
+    )
     @GetMapping("/getBlog")
     public Result<List<BlogVO>> pageBlog(@RequestParam(defaultValue = "1")Integer pageNo,
                                          @RequestParam(defaultValue = "10") Integer pageSize,
@@ -70,6 +83,18 @@ public class BlogController {
         return (User) request.getSession().getAttribute(USER_LOGIN_STATE);
     }
 
+    /**
+     * 设置redisson限流 此处全局共享 1000 QPS
+     * @param blogId
+     * @param request
+     * @return
+     */
+    @RateLimit(
+            key = "blog:detail",
+            rate = 1000,
+            interval = 1,
+            type = RateLimitType.GLOBAL
+    )
     @GetMapping("/{blogId}")
     public Result<BlogVO> detail(@PathVariable Long blogId, HttpServletRequest request) {
         return ResultUtils.success(ResultType.SUCCESS, blogService.blogDetail(blogId, request), "查询成功");
@@ -120,6 +145,19 @@ public class BlogController {
     public Result<Boolean> publishBlog(@PathVariable Long blogId, HttpServletRequest request) {
         return ResultUtils.success(updateBlogStatus(blogId, BlogConstant.BLOG_STATUS_PUBLISHED, request));
     }
+
+    /**
+     * 加入了ES高亮查询接口（使用关键词查询）
+     * @param blogSearchRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/es/search/blog")
+    public Result<List<BlogVO>> searchBlogList(@RequestBody BlogSearchRequest blogSearchRequest,
+                                                HttpServletRequest request){
+        return blogSearchService.search(blogSearchRequest, request);
+    }
+
 
     private Boolean updateBlogStatus(Long blogId, Integer status, HttpServletRequest request) {
         if (blogId == null || blogId <= 0) {

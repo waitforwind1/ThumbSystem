@@ -2,10 +2,10 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.usst.thumbs.common.BlogConstant;
 import com.usst.thumbs.common.HotConstant;
-import com.usst.thumbs.exception.BusinessException;
+import com.usst.thumbs.common.exception.BusinessException;
+import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.vo.BlogVO;
 import com.usst.thumbs.result.ResultType;
@@ -15,6 +15,8 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -28,15 +30,29 @@ public class HotServiceImpl implements HotService {
     @Resource
     private RedisTemplate<String,Object> redisTemplate;
 
-    @Resource
-    private Cache<String,List<BlogVO>> hotListLocalCache;
-
     @Autowired
     private BlogService blogService;
 
-    @Autowired
-    private Cache<String, Object> localCache;
+    @Resource
+    private BlogMapper blogMapper;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    private static final DefaultRedisScript<Long> INCREMENT_HOT_SCORE_SCRIPT = new DefaultRedisScript<>("""
+            local score = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
+            if tonumber(score) < 0 then
+                redis.call('ZADD', KEYS[1], 0, ARGV[2])
+            end
+            return 1
+            """, Long.class);
+
+    @Override
+    public void deleteHotScore(Long blogId) {
+        if(blogId==null)
+            throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
+        redisTemplate.opsForHash().delete(HotConstant.HOT_CONTENT_KEY,blogId.toString());
+    }
 
     @Override
     public void initBlogHotScore(Long blogId) {
@@ -50,16 +66,11 @@ public class HotServiceImpl implements HotService {
         if(blogId==null || score==0){
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         }
-        redisTemplate.opsForZSet().incrementScore(HotConstant.HOT_CONTENT_KEY,blogId.toString(),score);
-        Blog blog = blogService.getById(blogId);
-        if(blog!=null){
-            Double oldScore = blog.getHotScore();
-            blogService.lambdaUpdate()
-                    .eq(Blog::getId,blogId)
-                    .set(Blog::getHotScore,Math.max(oldScore+score,0))
-                    .update();
-        }
-        hotListLocalCache.invalidateAll();
+        stringRedisTemplate.execute(INCREMENT_HOT_SCORE_SCRIPT,
+                List.of(HotConstant.HOT_CONTENT_KEY),
+                String.valueOf(score),
+                blogId.toString());
+        blogMapper.incrementHotScore(blogId, score);
     }
 
     @Override

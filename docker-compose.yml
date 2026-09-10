@@ -1,38 +1,77 @@
 services:
-#  mysql:
-#    image: mysql:8.0
-#    restart: always
-#    container_name: thumbs-mysql
-#    ports:
-#      - "3307:3306"
-#    environment:
-#      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-#      MYSQL_DATABASE: thumbs
-#      TZ: Asia/Shanghai
-#    volumes:
-#      - thumbs-mysql-data:/var/lib/mysql
-#    command:
-#      --default-authentication-plugin=mysql_native_password
-#      --character-set-server=utf8mb4
-#      --collation-server=utf8mb4_unicode_ci
+  mysql:
+    image: mysql:8.0
+    restart: always
+    container_name: thumbs-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: thumbs
+      TZ: Asia/Shanghai
+    volumes:
+      - thumbs-mysql-data:/var/lib/mysql
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
 
   redis:
     image: redis:7
     container_name: thumbs-redis
-    restart: always
+    restart: no
     ports:
-      - "6379:6379"
+      - "6378:6379"
     volumes:
       - thumbs-redis-data:/data
     environment:
       TZ: Asia/Shanghai
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command:
+      - redis-server
+      - --requirepass ${REDIS_PASSWORD}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - always
+      - --maxmemory-policy
+      - noeviction
+      # Refuse new writes if the only replica is unavailable or lagging.
+      - --min-replicas-to-write
+      - "1"
+      - --min-replicas-max-lag
+      - "1"
+
+  redis-replica:
+    image: redis:7
+    container_name: thumbs-redis-replica
+    restart: no
+    depends_on:
+      - redis
+    volumes:
+      - thumbs-redis-replica-data:/data
+    environment:
+      TZ: Asia/Shanghai
+    command:
+      - redis-server
+      - --replicaof
+      - redis
+      - "6379"
+      - --masterauth
+      - ${REDIS_PASSWORD}
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - always
+      - --maxmemory-policy
+      - noeviction
 
 
   rabbitmq:
     image: rabbitmq:4-management
     container_name: thumbs-rabbitmq
-    restart: always
+    restart: no
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -45,7 +84,7 @@ services:
 
   elasticsearch:
     image: elasticsearch:9.4.2
-    restart: always
+    restart: no
     container_name: thumbs-elasticsearch
     ports:
       - "9200:9200"
@@ -59,27 +98,30 @@ services:
       - thumbs-es-data:/usr/share/elasticsearch/data
 
 #
-#  app:
-#    build: .
-#    container_name: thumbs-app
-#    restart: always
-#    depends_on:
-#      - redis
-#      - rabbitmq
-#      - mysql
-#    ports:
-#      - "8082:8082"
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-#      REDIS_PASSWORD: ${REDIS_PASSWORD}
-#      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-#      TZ: Asia/Shanghai
+  app:
+    build: .
+    container_name: thumbs-app
+    restart: always
+    depends_on:
+      - redis
+      - rabbitmq
+      - mysql
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      TZ: Asia/Shanghai
 
 
 
 volumes:
   thumbs-rabbitmq-data:
   thumbs-redis-data:
+  thumbs-redis-replica-data:
   thumbs-mysql-data:
   thumbs-es-data:
+
+

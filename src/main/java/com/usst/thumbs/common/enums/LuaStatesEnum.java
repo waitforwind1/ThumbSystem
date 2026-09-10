@@ -1,4 +1,4 @@
-package com.usst.thumbs.model.enums;
+package com.usst.thumbs.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

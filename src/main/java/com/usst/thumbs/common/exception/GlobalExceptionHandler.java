@@ -1,4 +1,4 @@
-package com.usst.thumbs.exception;
+package com.usst.thumbs.common.exception;
 
 import com.usst.thumbs.result.Result;
 import com.usst.thumbs.result.ResultUtils;
