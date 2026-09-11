@@ -1,4 +1,4 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.common.constant;
 
 public interface InteractionEventConstant {
 

@@ -1,4 +1,4 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.common.constant;
 
 public interface ThumbConstant {
 
@@ -8,7 +8,6 @@ public interface ThumbConstant {
 
     String USER_THUMB_KEY  = "user:thumb:%s";
 
-    /** Marks that the user's historical thumb records have been loaded into Redis. */
     String USER_THUMB_STATE_READY_KEY = "user:thumb:state:ready:%s";
 
     String BLOG_THUMB_COUNT_KEY = "blog:thumb:count:%s";

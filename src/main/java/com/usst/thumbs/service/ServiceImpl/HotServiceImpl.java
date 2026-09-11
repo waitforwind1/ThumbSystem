@@ -2,8 +2,8 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.HotConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.HotConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Blog;
@@ -13,6 +13,8 @@ import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.HotService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -46,6 +48,7 @@ public class HotServiceImpl implements HotService {
             end
             return 1
             """, Long.class);
+    private RedissonClient redissonClient;
 
     @Override
     public void deleteHotScore(Long blogId) {
@@ -66,6 +69,7 @@ public class HotServiceImpl implements HotService {
         if(blogId==null || score==0){
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         }
+        ensureHotStateLoaded();
         stringRedisTemplate.execute(INCREMENT_HOT_SCORE_SCRIPT,
                 List.of(HotConstant.HOT_CONTENT_KEY),
                 String.valueOf(score),
@@ -78,6 +82,7 @@ public class HotServiceImpl implements HotService {
         int size = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
         List<Long> existingIds = new ArrayList<>();
         List<BlogVO> result = new ArrayList<>();
+        ensureHotStateLoaded();
         Set<Object> ids = redisTemplate.opsForZSet()
                 .reverseRange(HotConstant.HOT_CONTENT_KEY, 0, size - 1);
         if (ids != null && !ids.isEmpty()) {
@@ -112,6 +117,32 @@ public class HotServiceImpl implements HotService {
                 .map(blog -> blogService.convertToBlogVO(blog, request))
                 .toList());
         return result;
+    }
+
+    private void ensureHotStateLoaded(){
+        String hotReadyKey = HotConstant.HOT_CONTENT_READY;
+        if(redisTemplate.hasKey(hotReadyKey))
+            return;
+        RLock lock = redissonClient.getLock("lock:hot:content:init");
+        lock.lock();
+        try {
+            List<Blog> blogList = blogService.lambdaQuery()
+                    .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)
+                    .orderByDesc(Blog::getHotScore)
+                    .last("limit 100")
+                    .list();
+            for (Blog blog : blogList) {
+                Double hotScore = blog.getHotScore();
+                if(hotScore== null)
+                    hotScore = 0.0;
+                redisTemplate.opsForZSet()
+                        .add(HotConstant.HOT_CONTENT_KEY,blog.getId().toString(),hotScore);
+            }
+            redisTemplate.opsForValue().set(hotReadyKey,"1");
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     @Override

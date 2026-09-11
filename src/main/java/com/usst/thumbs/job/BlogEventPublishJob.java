@@ -1,7 +1,7 @@
 package com.usst.thumbs.job;
 
-import com.usst.thumbs.common.BlogIndexEventConstant;
-import com.usst.thumbs.common.RabbitMQConstant;
+import com.usst.thumbs.common.constant.BlogIndexEventConstant;
+import com.usst.thumbs.common.constant.RabbitMQConstant;
 import com.usst.thumbs.mapper.BlogIndexEventMapper;
 import com.usst.thumbs.model.BlogIndexEvent;
 import com.usst.thumbs.service.BlogIndexEventService;
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-import static com.usst.thumbs.common.RabbitMQConstant.BLOG_INDEX_EVENT_TYPE;
-import static com.usst.thumbs.common.RabbitMQConstant.BLOG_INDEX_ROUTING_KEY;
+import static com.usst.thumbs.common.constant.RabbitMQConstant.BLOG_INDEX_EVENT_TYPE;
+import static com.usst.thumbs.common.constant.RabbitMQConstant.BLOG_INDEX_ROUTING_KEY;
 
 @Slf4j
 @Component

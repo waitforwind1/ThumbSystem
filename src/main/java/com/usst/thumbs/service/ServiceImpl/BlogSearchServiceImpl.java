@@ -3,7 +3,7 @@ package com.usst.thumbs.service.ServiceImpl;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import com.usst.thumbs.common.BlogConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.es.BlogEsDoc;
 import com.usst.thumbs.model.request.BlogSearchRequest;

@@ -1,4 +1,4 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.common.constant;
 
 public interface RabbitMQConstant {
     String BLOG_INDEX_EVENT_TYPE = "blog_index";

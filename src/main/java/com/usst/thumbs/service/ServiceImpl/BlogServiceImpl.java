@@ -7,10 +7,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.Repository.BlogRepository;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.FavoriteConstant;
-import com.usst.thumbs.common.ThumbConstant;
-import com.usst.thumbs.common.UserConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.FavoriteConstant;
+import com.usst.thumbs.common.constant.ThumbConstant;
+import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.common.redis.RedissonConstant;
 import com.usst.thumbs.mapper.BlogMapper;
@@ -43,11 +43,11 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import static com.usst.thumbs.common.BlogConstant.*;
-import static com.usst.thumbs.common.BlogIndexEventConstant.DELETE_ACTION;
-import static com.usst.thumbs.common.BlogIndexEventConstant.SAVE_ACTION;
-import static com.usst.thumbs.common.InteractionEventConstant.*;
-import static com.usst.thumbs.common.UserState.USER_LOGIN_STATE;
+import static com.usst.thumbs.common.constant.BlogConstant.*;
+import static com.usst.thumbs.common.constant.BlogIndexEventConstant.DELETE_ACTION;
+import static com.usst.thumbs.common.constant.BlogIndexEventConstant.SAVE_ACTION;
+import static com.usst.thumbs.common.constant.InteractionEventConstant.*;
+import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 /**
 * @author 22097
@@ -656,14 +656,10 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
 
     private Object getRedisValueOrDelete(String key) {
         try {
-            Object value = redisTemplate.opsForValue().get(key);
-            if(value !=null){
-                if (Objects.equals(value, CACHE_NULL_VALUE))
-                    return null;
-            }
-            return value;
+            return redisTemplate.opsForValue().get(key);
         } catch (SerializationException e) {
             redisTemplate.delete(key);
+            log.warn("Redis 缓存反序列化失败，已删除缓存，key={}", key, e);
             return null;
         }
     }

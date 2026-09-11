@@ -1,6 +1,6 @@
 package com.usst.thumbs.config.rabbitmqConfig;
 
-import com.usst.thumbs.common.RabbitMQConstant;
+import com.usst.thumbs.common.constant.RabbitMQConstant;
 import com.usst.thumbs.service.BlogIndexEventService;
 import com.usst.thumbs.service.InteractionEventService;
 import jakarta.annotation.PostConstruct;
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.usst.thumbs.common.RabbitMQConstant.*;
+import static com.usst.thumbs.common.constant.RabbitMQConstant.*;
 
 @Slf4j
 @Configuration

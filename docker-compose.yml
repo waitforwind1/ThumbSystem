@@ -1,16 +1,35 @@
 services:
+  app:
+    build: .
+    container_name: thumbs-app
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - rabbitmq
+      - mysql
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      TENCENT_COS_SECRET_ID: ${TENCENT_COS_SECRET_ID}
+      TENCENT_COS_SECRET_KEY: ${TENCENT_COS_SECRET_KEY}
+      TZ: Asia/Shanghai
+
   mysql:
     image: mysql:8.0
-    restart: always
+    restart: unless-stopped
     container_name: thumbs-mysql
     ports:
-      - "3307:3306"
+      - "3308:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: thumbs
       TZ: Asia/Shanghai
     volumes:
-      - thumbs-mysql-data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     command:
       --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
@@ -19,9 +38,9 @@ services:
   redis:
     image: redis:7
     container_name: thumbs-redis
-    restart: no
+    restart: unless-stopped
     ports:
-      - "6378:6379"
+      - "6380:6379"
     volumes:
       - thumbs-redis-data:/data
     environment:
@@ -44,7 +63,7 @@ services:
   redis-replica:
     image: redis:7
     container_name: thumbs-redis-replica
-    restart: no
+    restart: unless-stopped
     depends_on:
       - redis
     volumes:
@@ -71,7 +90,7 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     container_name: thumbs-rabbitmq
-    restart: no
+    restart: unless-stopped
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -84,7 +103,7 @@ services:
 
   elasticsearch:
     image: elasticsearch:9.4.2
-    restart: no
+    restart: unless-stopped
     container_name: thumbs-elasticsearch
     ports:
       - "9200:9200"
@@ -96,32 +115,10 @@ services:
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
       - thumbs-es-data:/usr/share/elasticsearch/data
-
-#
-  app:
-    build: .
-    container_name: thumbs-app
-    restart: always
-    depends_on:
-      - redis
-      - rabbitmq
-      - mysql
-    ports:
-      - "8082:8082"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      TZ: Asia/Shanghai
-
-
-
 volumes:
   thumbs-rabbitmq-data:
   thumbs-redis-data:
   thumbs-redis-replica-data:
-  thumbs-mysql-data:
   thumbs-es-data:
 
 

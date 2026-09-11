@@ -3,8 +3,8 @@ package com.usst.thumbs.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.usst.thumbs.aop.RateLimit;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.UserConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.enums.RateLimitType;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.usst.thumbs.common.UserState.USER_LOGIN_STATE;
+import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 @RestController
 @RequestMapping("/blog")

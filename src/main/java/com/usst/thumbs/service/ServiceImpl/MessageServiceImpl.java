@@ -4,8 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.MessageConstant;
-import com.usst.thumbs.common.UserConstant;
+import com.usst.thumbs.common.constant.MessageConstant;
+import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.MessageMapper;
 import com.usst.thumbs.model.Blog;
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.usst.thumbs.common.UserState.USER_LOGIN_STATE;
+import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 /**
 * @author 22097

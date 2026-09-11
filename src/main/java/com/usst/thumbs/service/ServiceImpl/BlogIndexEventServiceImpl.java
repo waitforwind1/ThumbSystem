@@ -1,7 +1,7 @@
 package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.BlogIndexEventConstant;
+import com.usst.thumbs.common.constant.BlogIndexEventConstant;
 import com.usst.thumbs.mapper.BlogIndexEventMapper;
 import com.usst.thumbs.model.BlogIndexEvent;
 import com.usst.thumbs.service.BlogIndexEventService;

@@ -4,7 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.UserConstant;
+import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.UserMapper;
@@ -22,7 +22,7 @@ import org.springframework.util.DigestUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static com.usst.thumbs.common.UserConstant.USER_IS_ADMIN;
+import static com.usst.thumbs.common.constant.UserConstant.USER_IS_ADMIN;
 
 /**
 * @author 22097

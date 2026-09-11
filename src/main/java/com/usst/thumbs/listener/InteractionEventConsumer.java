@@ -1,7 +1,7 @@
 package com.usst.thumbs.listener;
 
 import com.rabbitmq.client.Channel;
-import com.usst.thumbs.common.*;
+import com.usst.thumbs.common.constant.*;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.ConsumeRecordsMapper;
 import com.usst.thumbs.model.DTO.InteractionEventDTO;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 import java.io.IOException;
 
-import static com.usst.thumbs.common.InteractionEventConstant.*;
+import static com.usst.thumbs.common.constant.InteractionEventConstant.*;
 
 @Slf4j
 @Component

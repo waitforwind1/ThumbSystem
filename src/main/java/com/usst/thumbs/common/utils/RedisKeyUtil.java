@@ -1,6 +1,6 @@
 package com.usst.thumbs.common.utils;
 
-import com.usst.thumbs.common.ThumbConstant;
+import com.usst.thumbs.common.constant.ThumbConstant;
 
 // 封装 易用
 public class RedisKeyUtil {

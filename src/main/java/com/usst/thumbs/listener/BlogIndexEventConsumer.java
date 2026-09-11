@@ -1,8 +1,8 @@
 package com.usst.thumbs.listener;
 
 import com.usst.thumbs.Repository.BlogRepository;
-import com.usst.thumbs.common.BlogIndexEventConstant;
-import com.usst.thumbs.common.RabbitMQConstant;
+import com.usst.thumbs.common.constant.BlogIndexEventConstant;
+import com.usst.thumbs.common.constant.RabbitMQConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.ConsumeRecordsMapper;
 import com.usst.thumbs.model.Blog;
@@ -17,7 +17,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.usst.thumbs.common.RabbitMQConstant.BLOG_INDEX_CONSUMER_NAME;
+import static com.usst.thumbs.common.constant.RabbitMQConstant.BLOG_INDEX_CONSUMER_NAME;
 
 @Slf4j
 @Component

@@ -10,21 +10,53 @@ spring:
       host: redis
       port: 6379
       password: ${REDIS_PASSWORD}
+      database: 0
 
-
-  elasticsearch:
-    uris: http://thumbs-elasticsearch:9200
 
   session:
     store-type: redis
 
+  rabbitmq:
+    username: guest
+    password: ${RABBITMQ_PASSWORD}
+    host: rabbitmq
+    port: 5672
+    virtual-host: /
+    publisher-returns: true    # 开启callback 回调机制
+    publisher-confirm-type: correlated   # 开启confirm回调机制
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          max-attempts: 3
+          initial-interval: 1000ms
+          max-interval: 10000ms
+          enabled: true
+        default-requeue-rejected: false
+tencent:
+  cos:
+    region: ap-shanghai
+    appId: 1352223903
+    secretId: ${TENCENT_COS_SECRET_ID}
+    secretKey: ${TENCENT_COS_SECRET_KEY}
+    base-url: https://zerocode-1352223903.cos.ap-shanghai.myqcloud.com
+    bucket: zerocode-1352223903
 
 springdoc:
   swagger-ui:
     enabled: true
 
+
+knife4j:
+  setting:
+    language: zh_cn
+  basic:
+    enable: true
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
 app:
   upload:
-    dir: /home/ubuntu/thumbs/upload
+    dir: D:/Code/Java/Thumbs/upload
     url-prefix: /upload
-

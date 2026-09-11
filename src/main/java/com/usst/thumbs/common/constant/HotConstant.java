@@ -1,7 +1,11 @@
-package com.usst.thumbs.common;
+package com.usst.thumbs.common.constant;
 
 public interface HotConstant {
+
+    String HOT_CONTENT_READY = "hot_content_ready";
+
     String HOT_CONTENT_KEY = "hot:content";
+
     String HOT_CONTENT_CATEGORY_KEY = "hot:content:category:%s";
 
     String HOT_LOCAL_KEY = "hot:local:key:%s";

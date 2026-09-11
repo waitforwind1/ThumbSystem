@@ -1,7 +1,7 @@
 package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.InteractionEventConstant;
+import com.usst.thumbs.common.constant.InteractionEventConstant;
 import com.usst.thumbs.mapper.InteractionEventMapper;
 import com.usst.thumbs.model.InteractionEvent;
 import com.usst.thumbs.service.InteractionEventService;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 
-import static com.usst.thumbs.common.InteractionEventConstant.DELETE_HOT_TYPE;
+import static com.usst.thumbs.common.constant.InteractionEventConstant.DELETE_HOT_TYPE;
 
 /**
 * @author 22097

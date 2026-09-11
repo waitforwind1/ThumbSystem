@@ -1,7 +1,7 @@
 package com.usst.thumbs.job;
 
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.HotConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.HotConstant;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.HotService;

@@ -1,6 +1,6 @@
 package com.usst.thumbs.listener;
 
-import com.usst.thumbs.common.BlogConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.model.DTO.InteractionEventDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -1,6 +1,6 @@
 package com.usst.thumbs.job;
 
-import com.usst.thumbs.common.RabbitMQConstant;
+import com.usst.thumbs.common.constant.RabbitMQConstant;
 import com.usst.thumbs.model.DTO.InteractionEventDTO;
 import com.usst.thumbs.model.InteractionEvent;
 import com.usst.thumbs.service.InteractionEventService;
@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-import static com.usst.thumbs.common.InteractionEventConstant.DELAY_DELETE_TYPE;
-import static com.usst.thumbs.common.RabbitMQConstant.*;
+import static com.usst.thumbs.common.constant.InteractionEventConstant.DELAY_DELETE_TYPE;
+import static com.usst.thumbs.common.constant.RabbitMQConstant.*;
 
 @Slf4j
 @Component

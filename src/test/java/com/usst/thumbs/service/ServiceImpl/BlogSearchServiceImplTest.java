@@ -1,10 +1,10 @@
 package com.usst.thumbs.service.ServiceImpl;
 
 import com.usst.thumbs.Repository.BlogRepository;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.FavoriteConstant;
-import com.usst.thumbs.common.HotConstant;
-import com.usst.thumbs.common.ThumbConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.FavoriteConstant;
+import com.usst.thumbs.common.constant.HotConstant;
+import com.usst.thumbs.common.constant.ThumbConstant;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.es.BlogEsDoc;
 import com.usst.thumbs.service.BlogSearchService;

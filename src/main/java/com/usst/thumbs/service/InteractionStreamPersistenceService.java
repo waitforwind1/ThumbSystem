@@ -1,6 +1,6 @@
 package com.usst.thumbs.service;
 
-import com.usst.thumbs.common.InteractionEventConstant;
+import com.usst.thumbs.common.constant.InteractionEventConstant;
 import com.usst.thumbs.common.redis.InteractionStreamConstant;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.ConsumeRecordsMapper;

@@ -2,9 +2,9 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.FavoriteConstant;
-import com.usst.thumbs.common.InteractionEventConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.FavoriteConstant;
+import com.usst.thumbs.common.constant.InteractionEventConstant;
 import com.usst.thumbs.common.redis.InteractionStreamConstant;
 import com.usst.thumbs.common.redis.RedisLuaScriptConstant;
 import com.usst.thumbs.common.exception.BusinessException;
@@ -24,8 +24,8 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.usst.thumbs.common.CommonConstant.DUPLICATE_RES;
-import static com.usst.thumbs.common.UserState.USER_LOGIN_STATE;
+import static com.usst.thumbs.common.constant.CommonConstant.DUPLICATE_RES;
+import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 /**
 * @author 22097

@@ -2,7 +2,7 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.BlogConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.ShareMapper;
 import com.usst.thumbs.model.Blog;

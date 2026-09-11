@@ -2,7 +2,7 @@ package com.usst.thumbs.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.usst.thumbs.Repository.BlogRepository;
-import com.usst.thumbs.common.BlogConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.es.BlogEsDoc;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/** Creates a missing article index and rebuilds it from MySQL after index recreation. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

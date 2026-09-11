@@ -2,9 +2,9 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.usst.thumbs.common.BlogConstant;
-import com.usst.thumbs.common.InteractionEventConstant;
-import com.usst.thumbs.common.ThumbConstant;
+import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.InteractionEventConstant;
+import com.usst.thumbs.common.constant.ThumbConstant;
 import com.usst.thumbs.common.redis.InteractionStreamConstant;
 import com.usst.thumbs.common.redis.RedisLuaScriptConstant;
 import com.usst.thumbs.common.exception.BusinessException;
@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.usst.thumbs.common.ThumbConstant.ACTION_CANCEL;
-import static com.usst.thumbs.common.UserState.USER_LOGIN_STATE;
+import static com.usst.thumbs.common.constant.ThumbConstant.ACTION_CANCEL;
+import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 /**
 * @author 22097
@@ -138,10 +138,6 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
         throw new BusinessException(ResultType.PARAM_ERROR,"用户未登录");
     }
 
-    /**
-     * Lua must never operate on a partially unknown user state. On the first access
-     * after a Redis rebuild, hydrate all historical records before executing it.
-     */
     private void ensureUserThumbStateLoaded(Long userId) {
         String readyKey = ThumbConstant.USER_THUMB_STATE_READY_KEY.formatted(userId);
         if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(readyKey))) {
@@ -158,7 +154,6 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
         if (!historicalState.isEmpty()) {
             redisTemplate.opsForHash().putAll(ThumbConstant.USER_THUMB_KEY.formatted(userId), historicalState);
         }
-        // Set only after the hash is fully available; concurrent loaders are harmless.
         stringRedisTemplate.opsForValue().set(readyKey, "1");
     }
 

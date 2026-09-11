@@ -1,6 +1,6 @@
 package com.usst.thumbs.listener;
 
-import com.usst.thumbs.common.RabbitMQConstant;
+import com.usst.thumbs.common.constant.RabbitMQConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.DeadMessage;
 import com.usst.thumbs.result.ResultType;
