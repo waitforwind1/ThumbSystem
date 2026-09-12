@@ -13,5 +13,7 @@ public interface CommentConstant {
     int COMMENT_NO_DELETE = 0;
     int COMMENT_IS_DELETE = 1;
 
+    double HOT_SCORE_COMMENT = 4.0;
+
     long COMMENT_COUNT_TTL = 10L;
 }

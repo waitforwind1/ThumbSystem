@@ -1,11 +1,15 @@
 package com.usst.thumbs.job;
 
+import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.mapper.BlogMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +31,12 @@ public class InteractionCountReconcileJob {
 
     private final BlogMapper blogMapper;
     private final RedissonClient redissonClient;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void reconcileOnStartup() {
+        reconcile();
+    }
 
     @Scheduled(cron = "${thumbs.jobs.interaction-count-reconcile.cron:0 30 3 * * *}")
     public void reconcile() {
@@ -41,8 +51,13 @@ public class InteractionCountReconcileJob {
             List<Long> mismatchIds = blogMapper.selectInteractionCountMismatchIds(BATCH_SIZE);
             for (Long blogId : mismatchIds) {
                 blogMapper.reconcileInteractionCounts(blogId);
+                redisTemplate.delete(BlogConstant.BLOG_DETAIL_KEY.formatted(blogId));
             }
             if (!mismatchIds.isEmpty()) {
+                for (int size : List.of(10, 20, 50)) {
+                    redisTemplate.delete(BlogConstant.BLOG_PAGE_KEY.formatted(1, size));
+                    redisTemplate.delete(BlogConstant.BLOG_PAGE_KEY.formatted(2, size));
+                }
                 log.warn("Reconciled interaction counters for {} blog(s): {}", mismatchIds.size(), mismatchIds);
             }
         } catch (InterruptedException exception) {

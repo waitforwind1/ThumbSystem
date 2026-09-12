@@ -6,6 +6,8 @@ public interface HotConstant {
 
     String HOT_CONTENT_KEY = "hot:content";
 
+    String HOT_CONTENT_LOCK = "lock:hot:content";
+
     String HOT_CONTENT_CATEGORY_KEY = "hot:content:category:%s";
 
     String HOT_LOCAL_KEY = "hot:local:key:%s";

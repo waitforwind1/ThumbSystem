@@ -9,6 +9,7 @@ import com.usst.thumbs.common.constant.CommentConstant;
 import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.mapper.CommentMapper;
+import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Comment;
 import com.usst.thumbs.model.User;
@@ -46,6 +47,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 
     @Resource
     private BlogService blogService;
+
+    @Resource
+    private BlogMapper blogMapper;
 
     @Autowired
     private RedisTemplate<String,Object> redisTemplate;
@@ -86,6 +90,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         boolean saved = this.save(comment);
         if(!saved)
             throw new BusinessException(ResultType.DATABASE_ERROR,"评论发表失败");
+        blogMapper.batchUpdateCommentCount(Map.of(blogId, 1L));
         interactionEventService.saveCommentEvent(
                 UUID.randomUUID().toString().replace("-", ""),
                 userId, blogId, blog.getUserId(), comment.getId());
@@ -123,6 +128,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         boolean saved = this.save(comment);
         if(!saved)
             throw new BusinessException(ResultType.DATABASE_ERROR,"回复评论失败");
+        blogMapper.batchUpdateCommentCount(Map.of(blogId, 1L));
         interactionEventService.saveReplyEvent(
                 UUID.randomUUID().toString().replace("-", ""),
                 loginUser.getId(), blogId, parent.getUserId(), comment.getId());
@@ -211,6 +217,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                 .update();
         if(!updated)
             throw new BusinessException(ResultType.PARAM_ERROR,"删除评论失败");
+        blogMapper.batchUpdateCommentCount(Map.of(comment.getBlogId(), -1L));
         interactionEventService.saveCommentDeleteEvent(
                 UUID.randomUUID().toString().replace("-", ""),
                 comment.getBlogId());

@@ -18,12 +18,18 @@ import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.MessageService;
 import com.usst.thumbs.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.data.redis.core.RedisTemplate;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
@@ -33,15 +39,16 @@ import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 * @createDate 2026-05-29 18:58:04
 */
 @Service
+@Slf4j
 public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     implements MessageService{
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final UserService userService;
     private final BlogService blogService;
 
-    public MessageServiceImpl(RedisTemplate<String, Object> redisTemplate, UserService userService, BlogService blogService) {
-        this.redisTemplate = redisTemplate;
+    public MessageServiceImpl(StringRedisTemplate stringRedisTemplate, UserService userService, BlogService blogService) {
+        this.stringRedisTemplate = stringRedisTemplate;
         this.userService = userService;
         this.blogService = blogService;
     }
@@ -97,7 +104,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
                 .build();
         boolean saved = this.save(message);
         if(saved){
-            redisTemplate.opsForValue().increment(MessageConstant.MESSAGE_UNREAD_KEY.formatted(eventDTO.getTargetUserId()));
+            evictUnreadCountAfterCommit(eventDTO.getTargetUserId());
         }
     }
 
@@ -110,14 +117,26 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     public Long getUnReadCount(HttpServletRequest request) {
         User loginUser = getLoginUser(request);
         String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(loginUser.getId());
-        Object object = redisTemplate.opsForValue().get(key);
-        if(object!=null){
-            return Long.valueOf(object.toString());
+        String cachedCount = stringRedisTemplate.opsForValue().get(key);
+        if(cachedCount != null){
+            Long remainingTtl = stringRedisTemplate.getExpire(key, TimeUnit.SECONDS);
+            if (remainingTtl != null && remainingTtl > 0) {
+                try {
+                    return Long.valueOf(cachedCount);
+                } catch (NumberFormatException ignored) {
+                    // Invalid cache values are discarded and rebuilt from MySQL below.
+                }
+            }
+            stringRedisTemplate.delete(key);
         }
         long count = this.count(new LambdaQueryWrapper<Message>()
                 .eq(Message::getIsRead, MessageConstant.UNREAD)
                 .eq(Message::getReceiverId, loginUser.getId()));
-        redisTemplate.opsForValue().set(key,count);
+        stringRedisTemplate.opsForValue().set(
+                key,
+                String.valueOf(count),
+                MessageConstant.MESSAGE_UNREAD_TTL_MINUTES,
+                TimeUnit.MINUTES);
         return count;
     }
 
@@ -162,6 +181,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean readMessage(HttpServletRequest request, Long messageId) {
         User loginUser = getLoginUser(request);
         Message message = this.getById(messageId);
@@ -176,45 +196,42 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
         if(!updated) {
             throw new BusinessException(ResultType.DATABASE_ERROR, "设置已读失败");
         }
-        String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(loginUser.getId());
-        Object object = redisTemplate.opsForValue().get(key);
-        if(object!=null && Long.parseLong(object.toString())>0) {
-            redisTemplate.opsForValue().decrement(key);
-        }
+        evictUnreadCountAfterCommit(loginUser.getId());
         return true;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean readAll(HttpServletRequest request) {
         User loginUser = getLoginUser(request);
-        String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(loginUser.getId());
         this.lambdaUpdate().eq(Message::getReceiverId,loginUser.getId())
                 .eq(Message::getIsRead,MessageConstant.UNREAD)
                 .set(Message::getIsRead,MessageConstant.READ)
                 .update();
-        redisTemplate.opsForValue().set(key,0);
+        evictUnreadCountAfterCommit(loginUser.getId());
         return true;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean deleteMessage(Long messageId,HttpServletRequest request) {
         User loginUser = getLoginUser(request);
         Message message = this.lambdaQuery().eq(Message::getId, messageId).one();
+        if (message == null) {
+            throw new BusinessException(ResultType.PARAM_ERROR, "消息不存在");
+        }
         if(!loginUser.getIsAdmin().equals(UserConstant.USER_IS_ADMIN) && !loginUser.getId().equals(message.getReceiverId()))
             throw new BusinessException(ResultType.NO_AUTH,"没有权限删除");
         boolean removed = this.removeById(messageId);
         if(!removed)
             throw new BusinessException(ResultType.DATABASE_ERROR,"删除失败");
-        if(message.getIsRead().equals(MessageConstant.UNREAD)){
-            String key = MessageConstant.MESSAGE_UNREAD_KEY.formatted(message.getReceiverId());
-            Object value = redisTemplate.opsForValue().get(key);
-            if(value!=null && Long.parseLong(value.toString())>0){
-                redisTemplate.opsForValue().decrement(key);
-            }
+        if (Objects.equals(message.getIsRead(), MessageConstant.UNREAD)) {
+            evictUnreadCountAfterCommit(message.getReceiverId());
         }
         return true;
     }
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean createSystemMessage(Long receiverId, String title, String content) {
         if (receiverId == null || StrUtil.isBlank(title) || StrUtil.isBlank(content)) {
             throw new BusinessException(ResultType.PARAM_ERROR, "系统消息参数错误");
@@ -230,9 +247,33 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
                 .build();
         boolean saved = this.save(message);
         if (saved) {
-            redisTemplate.opsForValue().increment(MessageConstant.MESSAGE_UNREAD_KEY.formatted(receiverId));
+            evictUnreadCountAfterCommit(receiverId);
         }
         return saved;
+    }
+
+    private void evictUnreadCountAfterCommit(Long receiverId) {
+        if (receiverId == null) {
+            return;
+        }
+        Runnable evict = () -> {
+            try {
+                stringRedisTemplate.delete(MessageConstant.MESSAGE_UNREAD_KEY.formatted(receiverId));
+            } catch (RuntimeException exception) {
+                log.warn("Failed to evict unread message count cache, receiverId={}", receiverId, exception);
+            }
+        };
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !TransactionSynchronizationManager.isSynchronizationActive()) {
+            evict.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                evict.run();
+            }
+        });
     }
 
     private User getLoginUser(HttpServletRequest request){

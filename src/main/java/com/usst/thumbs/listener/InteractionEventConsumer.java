@@ -2,7 +2,6 @@ package com.usst.thumbs.listener;
 
 import com.rabbitmq.client.Channel;
 import com.usst.thumbs.common.constant.*;
-import com.usst.thumbs.mapper.BlogMapper;
 import com.usst.thumbs.mapper.ConsumeRecordsMapper;
 import com.usst.thumbs.model.DTO.InteractionEventDTO;
 import com.usst.thumbs.service.HotService;
@@ -15,8 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Map;
 
 import java.io.IOException;
 
@@ -36,9 +33,6 @@ public class InteractionEventConsumer {
     @Resource
     private ConsumeRecordsMapper consumeRecordsMapper;
     
-    @Resource
-    private BlogMapper blogMapper;
-
     private final String CONSUMER_NAME = "interaction_event_consumer";
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -105,19 +99,16 @@ public class InteractionEventConsumer {
     }
     private void handleComment(InteractionEventDTO event){
         if (event.getAction() == ACTION_ADD) {
-            blogMapper.batchUpdateCommentCount(Map.of(event.getBlogId(), 1L));
             messageService.createCommentMessage(event);
-            hotService.incrHotScore(event.getBlogId(), FavoriteConstant.HOT_SCORE_FAVORITE);
+            hotService.incrHotScore(event.getBlogId(), CommentConstant.HOT_SCORE_COMMENT);
         } else {
-            blogMapper.batchUpdateCommentCount(Map.of(event.getBlogId(), -1L));
-            hotService.incrHotScore(event.getBlogId(), -FavoriteConstant.HOT_SCORE_FAVORITE);
+            hotService.incrHotScore(event.getBlogId(), -CommentConstant.HOT_SCORE_COMMENT);
         }
     }
     private void handleReply(InteractionEventDTO event){
         if (event.getAction() == ACTION_ADD) {
-            blogMapper.batchUpdateCommentCount(Map.of(event.getBlogId(), 1L));
             messageService.createReplyMessage(event);
-            hotService.incrHotScore(event.getBlogId(),FavoriteConstant.HOT_SCORE_FAVORITE);
+            hotService.incrHotScore(event.getBlogId(), CommentConstant.HOT_SCORE_COMMENT);
         }
     }
 }

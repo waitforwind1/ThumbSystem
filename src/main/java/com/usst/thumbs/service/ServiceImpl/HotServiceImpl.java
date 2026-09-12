@@ -11,12 +11,10 @@ import com.usst.thumbs.model.vo.BlogVO;
 import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.HotService;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -27,19 +25,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class HotServiceImpl implements HotService {
 
-    @Resource
-    private RedisTemplate<String,Object> redisTemplate;
-
-    @Autowired
-    private BlogService blogService;
-
-    @Resource
-    private BlogMapper blogMapper;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private final BlogService blogService;
+    private final BlogMapper blogMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final RedissonClient redissonClient;
 
     private static final DefaultRedisScript<Long> INCREMENT_HOT_SCORE_SCRIPT = new DefaultRedisScript<>("""
             local score = redis.call('ZINCRBY', KEYS[1], ARGV[1], ARGV[2])
@@ -48,20 +40,20 @@ public class HotServiceImpl implements HotService {
             end
             return 1
             """, Long.class);
-    private RedissonClient redissonClient;
-
     @Override
     public void deleteHotScore(Long blogId) {
         if(blogId==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
-        redisTemplate.opsForHash().delete(HotConstant.HOT_CONTENT_KEY,blogId.toString());
+        withHotLock(() -> stringRedisTemplate.opsForZSet()
+                .remove(HotConstant.HOT_CONTENT_KEY, blogId.toString()));
     }
 
     @Override
     public void initBlogHotScore(Long blogId) {
         if(blogId==null)
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
-        redisTemplate.opsForZSet().add(HotConstant.HOT_CONTENT_KEY,blogId.toString(),0.0);
+        withHotLock(() -> stringRedisTemplate.opsForZSet()
+                .add(HotConstant.HOT_CONTENT_KEY,blogId.toString(),0.0));
     }
 
     @Override
@@ -69,12 +61,14 @@ public class HotServiceImpl implements HotService {
         if(blogId==null || score==0){
             throw new BusinessException(ResultType.PARAM_ERROR,"参数错误");
         }
-        ensureHotStateLoaded();
-        stringRedisTemplate.execute(INCREMENT_HOT_SCORE_SCRIPT,
-                List.of(HotConstant.HOT_CONTENT_KEY),
-                String.valueOf(score),
-                blogId.toString());
-        blogMapper.incrementHotScore(blogId, score);
+        withHotLock(() -> {
+            ensureHotStateLoaded();
+            stringRedisTemplate.execute(INCREMENT_HOT_SCORE_SCRIPT,
+                    List.of(HotConstant.HOT_CONTENT_KEY),
+                    String.valueOf(score),
+                    blogId.toString());
+            blogMapper.incrementHotScore(blogId, score);
+        });
     }
 
     @Override
@@ -83,15 +77,17 @@ public class HotServiceImpl implements HotService {
         List<Long> existingIds = new ArrayList<>();
         List<BlogVO> result = new ArrayList<>();
         ensureHotStateLoaded();
-        Set<Object> ids = redisTemplate.opsForZSet()
+        Set<String> ids = stringRedisTemplate.opsForZSet()
                 .reverseRange(HotConstant.HOT_CONTENT_KEY, 0, size - 1);
         if (ids != null && !ids.isEmpty()) {
             List<Long> blogIds = ids.stream()
-                    .map(Object::toString)
-                    .map(Long::valueOf)
+                    .map(this::parseBlogId)
+                    .filter(Objects::nonNull)
+                    .distinct()
                     .toList();
             List<Blog> blogs = blogService.list(new LambdaQueryWrapper<Blog>()
-                    .in(Blog::getId, blogIds)
+                    .eq(blogIds.isEmpty(), Blog::getId, -1L)
+                    .in(!blogIds.isEmpty(), Blog::getId, blogIds)
                     .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED));
             Map<Long, Blog> blogMap = blogs.stream()
                     .collect(Collectors.toMap(Blog::getId, blog -> blog));
@@ -121,9 +117,10 @@ public class HotServiceImpl implements HotService {
 
     private void ensureHotStateLoaded(){
         String hotReadyKey = HotConstant.HOT_CONTENT_READY;
-        if(redisTemplate.hasKey(hotReadyKey))
+        if(Boolean.TRUE.equals(stringRedisTemplate.hasKey(hotReadyKey))
+                && Optional.ofNullable(stringRedisTemplate.opsForZSet().zCard(HotConstant.HOT_CONTENT_KEY)).orElse(0L) > 0)
             return;
-        RLock lock = redissonClient.getLock("lock:hot:content:init");
+        RLock lock = redissonClient.getLock(HotConstant.HOT_CONTENT_LOCK);
         lock.lock();
         try {
             List<Blog> blogList = blogService.lambdaQuery()
@@ -136,14 +133,42 @@ public class HotServiceImpl implements HotService {
                 if(hotScore== null)
                     hotScore = 0.0;
                 hotScore = Math.max(hotScore, 0.0);
-                redisTemplate.opsForZSet()
+                stringRedisTemplate.opsForZSet()
                         .add(HotConstant.HOT_CONTENT_KEY,blog.getId().toString(),hotScore);
             }
-            redisTemplate.opsForValue().set(hotReadyKey,"1");
+            stringRedisTemplate.opsForValue().set(hotReadyKey,"1");
         } finally {
             lock.unlock();
         }
 
+    }
+
+    private void withHotLock(Runnable action) {
+        RLock lock = redissonClient.getLock(HotConstant.HOT_CONTENT_LOCK);
+        lock.lock();
+        try {
+            action.run();
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    private Long parseBlogId(String member) {
+        if (member == null) {
+            return null;
+        }
+        String normalized = member.trim();
+        if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        try {
+            return Long.valueOf(normalized);
+        } catch (NumberFormatException ignored) {
+            stringRedisTemplate.opsForZSet().remove(HotConstant.HOT_CONTENT_KEY, member);
+            return null;
+        }
     }
 
     @Override
@@ -179,54 +204,13 @@ public class HotServiceImpl implements HotService {
         }
 
         int size = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
-
-        String hotCategoryKey = HotConstant.HOT_CONTENT_CATEGORY_KEY.formatted(category);
-
-        Set<Object> ids = redisTemplate.opsForZSet()
-                .reverseRange(hotCategoryKey, 0, size - 1);
-
-        List<Long> existingIds = new ArrayList<>();
-        List<BlogVO> result = new ArrayList<>();
-        if (ids != null && !ids.isEmpty()) {
-            List<Long> blogIds = ids.stream()
-                    .map(Object::toString)
-                    .map(Long::valueOf)
-                    .toList();
-
-            List<Blog> blogs = blogService.list(new LambdaQueryWrapper<Blog>()
-                    .in(Blog::getId, blogIds)
-                    .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)
-                    .eq(Blog::getCategory, category));
-
-            Map<Long, Blog> blogMap = blogs.stream()
-                    .collect(Collectors.toMap(Blog::getId, blog -> blog));
-
-            result.addAll(blogIds.stream()
-                    .map(blogMap::get)
-                    .filter(Objects::nonNull)
-                    .map(blog -> blogService.convertToBlogVO(blog, request))
-                    .toList());
-            existingIds.addAll(blogIds);
-
-            if (result.size() >= size) {
-                return result;
-            }
-        }
-
-        LambdaQueryWrapper<Blog> queryWrapper = new LambdaQueryWrapper<Blog>()
+        Page<Blog> page = blogService.page(new Page<>(1, size), new LambdaQueryWrapper<Blog>()
                 .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)
-                .eq(Blog::getCategory, category);
-        if (!existingIds.isEmpty()) {
-            queryWrapper.notIn(Blog::getId, existingIds);
-        }
-        queryWrapper.orderByDesc(Blog::getHotScore)
-                .orderByDesc(Blog::getCreateTime);
-
-        Page<Blog> page = blogService.page(new Page<>(1, size - result.size()), queryWrapper);
-
-        result.addAll(page.getRecords().stream()
+                .eq(Blog::getCategory, category)
+                .orderByDesc(Blog::getHotScore)
+                .orderByDesc(Blog::getCreateTime));
+        return page.getRecords().stream()
                 .map(blog -> blogService.convertToBlogVO(blog, request))
-                .toList());
-        return result;
+                .toList();
     }
 }

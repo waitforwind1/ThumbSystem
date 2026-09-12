@@ -3,6 +3,7 @@ package com.usst.thumbs.common.constant;
 
 public interface MessageConstant {
     String MESSAGE_UNREAD_KEY = "message:unread:%s";
+    long MESSAGE_UNREAD_TTL_MINUTES = 10L;
 
     int TYPE_THUMB = 1;
     int TYPE_COMMENT = 2;

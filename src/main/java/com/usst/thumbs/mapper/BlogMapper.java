@@ -35,9 +35,12 @@ public interface BlogMapper extends BaseMapper<Blog> {
             on t.blog_id = b.id
         left join (select blog_id, count(*) as count_value from favorite group by blog_id) f
             on f.blog_id = b.id
+        left join (select blog_id, count(*) as count_value from comment where is_delete = 0 and status = 0 group by blog_id) c
+            on c.blog_id = b.id
         where b.is_delete = 0
           and (b.thumb_count <> coalesce(t.count_value, 0)
-               or b.favorite_count <> coalesce(f.count_value, 0))
+               or b.favorite_count <> coalesce(f.count_value, 0)
+               or b.comment_count <> coalesce(c.count_value, 0))
         order by b.id
         limit #{limit}
         """)
@@ -49,8 +52,11 @@ public interface BlogMapper extends BaseMapper<Blog> {
             on t.blog_id = b.id
         left join (select blog_id, count(*) as count_value from favorite group by blog_id) f
             on f.blog_id = b.id
+        left join (select blog_id, count(*) as count_value from comment where is_delete = 0 and status = 0 group by blog_id) c
+            on c.blog_id = b.id
         set b.thumb_count = coalesce(t.count_value, 0),
-            b.favorite_count = coalesce(f.count_value, 0)
+            b.favorite_count = coalesce(f.count_value, 0),
+            b.comment_count = coalesce(c.count_value, 0)
         where b.id = #{blogId}
           and b.is_delete = 0
         """)

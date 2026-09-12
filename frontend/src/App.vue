@@ -1483,6 +1483,7 @@ async function postComment() {
   if (!selectedBlog.value || !commentText.value) return
   await guarded(async () => {
     await api.addComment(selectedBlog.value.id, commentText.value)
+    adjustBlogCommentCount(selectedBlog.value.id, 1)
     commentText.value = ''
     comments.value = await api.comments(selectedBlog.value.id)
   }, '评论成功')
@@ -1493,10 +1494,31 @@ async function postReply() {
   if (!selectedBlog.value || !replyTarget.value || !replyText.value) return
   await guarded(async () => {
     await api.replyComment(selectedBlog.value.id, replyTarget.value.id, replyText.value)
+    adjustBlogCommentCount(selectedBlog.value.id, 1)
     replyText.value = ''
     replyTarget.value = null
     comments.value = await api.comments(selectedBlog.value.id)
   }, '回复成功')
+}
+
+function adjustBlogCommentCount(blogId, delta) {
+  const candidates = [
+    selectedBlog.value,
+    ...blogList.value,
+    ...blogPool.value,
+    ...hotList.value,
+    ...favoriteList.value,
+    ...myBlogList.value,
+    ...myBlogPool.value,
+    ...authorBlogList.value,
+    ...adminBlogs.value
+  ]
+  const updated = new Set()
+  for (const blog of candidates) {
+    if (!blog || blog.id !== blogId || updated.has(blog)) continue
+    blog.commentCount = Math.max(Number(blog.commentCount || 0) + delta, 0)
+    updated.add(blog)
+  }
 }
 
 function flattenComments(list, depth = 0, result = []) {
