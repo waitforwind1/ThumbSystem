@@ -1,8 +1,14 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /workspace
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 EXPOSE 8082
-COPY target/*.jar app.jar
-ENTRYPOINT ["java", "-jar","app.jar"]
+COPY --from=build /workspace/target/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
 LABEL authors="22097"
 

@@ -25,6 +25,11 @@ public class HotListRefresh {
 
     @Scheduled(cron = "0 */5 * * * *")
     void refreshHotRank(){
+        // 清理旧版本热度公式留下的负分，保证数据库与 Redis 都以 0 为下限。
+        blogService.lambdaUpdate()
+                .lt(Blog::getHotScore, 0)
+                .set(Blog::getHotScore, 0.0)
+                .update();
         redisTemplate.delete(HotConstant.HOT_CONTENT_KEY);
         List<Blog> blogList = blogService.lambdaQuery()
                 .eq(Blog::getStatus, BlogConstant.BLOG_STATUS_PUBLISHED)

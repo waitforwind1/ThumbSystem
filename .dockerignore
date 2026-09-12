@@ -1,0 +1,12 @@
+.git
+.env
+.idea
+.vscode
+target
+frontend
+uploads
+upload
+docs
+*.log
+*.iml
+*.sql

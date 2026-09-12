@@ -21,15 +21,13 @@
 
     <properties>
         <java.version>21</java.version>
-        <elasticsearch-java.version>8.19.0</elasticsearch-java.version>
     </properties>
 
     <dependencies>
         <!--加入AOP切面依赖支持-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aspectj</artifactId>
-            <version>4.0.7</version>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <!-- Redisson -->
         <dependency>
@@ -103,11 +101,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-        </dependency>
-
         <!-- 图片压缩工具-->
         <dependency>
             <groupId>net.coobird</groupId>
@@ -154,8 +147,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>17</source>
-                    <target>17</target>
+                    <release>${java.version}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

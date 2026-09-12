@@ -135,6 +135,7 @@ public class HotServiceImpl implements HotService {
                 Double hotScore = blog.getHotScore();
                 if(hotScore== null)
                     hotScore = 0.0;
+                hotScore = Math.max(hotScore, 0.0);
                 redisTemplate.opsForZSet()
                         .add(HotConstant.HOT_CONTENT_KEY,blog.getId().toString(),hotScore);
             }
@@ -162,12 +163,13 @@ public class HotServiceImpl implements HotService {
                     Instant.now()
             ).toHours();
         }
-        return thumb * 3.0
+        double score = thumb * 3.0
                 + favorite * 5.0
                 + comment * 4.0
                 + share * 6.0
                 + view
                 - ageHours * 0.5;
+        return Math.max(score, 0.0);
     }
 
     @Override

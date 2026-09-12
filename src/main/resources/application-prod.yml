@@ -3,12 +3,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: ${MYSQL_PASSWORD}
-    url: jdbc:mysql://mysql:3306/thumbs
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:thumbs}
 
   data:
     redis:
-      host: redis
-      port: 6379
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
       database: 0
 
@@ -17,10 +17,10 @@ spring:
     store-type: redis
 
   rabbitmq:
-    username: guest
+    username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
-    host: rabbitmq
-    port: 5672
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
     virtual-host: /
     publisher-returns: true    # 开启callback 回调机制
     publisher-confirm-type: correlated   # 开启confirm回调机制
@@ -33,6 +33,8 @@ spring:
           max-interval: 10000ms
           enabled: true
         default-requeue-rejected: false
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://elasticsearch:9200}
 tencent:
   cos:
     region: ap-shanghai
@@ -44,19 +46,18 @@ tencent:
 
 springdoc:
   swagger-ui:
-    enabled: true
+    enabled: false
 
 
 knife4j:
   setting:
     language: zh_cn
   basic:
-    enable: true
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    enable: false
 
 app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5172}
   upload:
-    dir: D:/Code/Java/Thumbs/upload
+    dir: ${UPLOAD_DIR:/app/uploads}
     url-prefix: /upload
