@@ -2,6 +2,7 @@ package com.usst.thumbs.common.constant;
 
 public interface BlogIndexEventConstant {
 
+    String BLOG_INDEX_LOCK= "BLOG_INDEX_LOCK";
     String SAVE_ACTION = "save";
     String DELETE_ACTION = "delete";
 

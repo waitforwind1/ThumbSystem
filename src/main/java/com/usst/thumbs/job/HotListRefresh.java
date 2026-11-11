@@ -2,7 +2,9 @@ package com.usst.thumbs.job;
 
 import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.common.constant.HotConstant;
+import com.usst.thumbs.common.exception.BusinessException;
 import com.usst.thumbs.model.Blog;
+import com.usst.thumbs.result.ResultType;
 import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.HotService;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +60,7 @@ public class HotListRefresh {
         } catch (RuntimeException exception) {
             stringRedisTemplate.delete(temporaryKey);
             log.error("刷新热榜失败", exception);
+            throw new BusinessException(ResultType.SYSTEM_ERROR,"刷新热榜失败");
         } finally {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();

@@ -1,33 +1,33 @@
 services:
-  app:
-    build: .
-    container_name: thumbs-app
-    restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      redis-replica:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-    ports:
-      - "8082:8082"
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:5172}
-      TENCENT_COS_SECRET_ID: ${TENCENT_COS_SECRET_ID}
-      TENCENT_COS_SECRET_KEY: ${TENCENT_COS_SECRET_KEY}
-      TZ: Asia/Shanghai
-    volumes:
-      - thumbs-upload-data:/app/uploads
+#  app:
+#    build: .
+#    container_name: thumbs-app
+#    restart: unless-stopped
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      redis-replica:
+#        condition: service_healthy
+#      rabbitmq:
+#        condition: service_healthy
+#      elasticsearch:
+#        condition: service_healthy
+#    ports:
+#      - "8082:8082"
+#    environment:
+#      SPRING_PROFILES_ACTIVE: prod
+#      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+#      REDIS_PASSWORD: ${REDIS_PASSWORD}
+#      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+#      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+#      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:5172}
+#      TENCENT_COS_SECRET_ID: ${TENCENT_COS_SECRET_ID}
+#      TENCENT_COS_SECRET_KEY: ${TENCENT_COS_SECRET_KEY}
+#      TZ: Asia/Shanghai
+#    volumes:
+#      - thumbs-upload-data:/app/uploads
 
   mysql:
     image: mysql:8.0
@@ -77,7 +77,7 @@ services:
       - --min-replicas-to-write
       - "1"
       - --min-replicas-max-lag
-      - "1"
+      - "5"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 5s
@@ -166,5 +166,3 @@ volumes:
   thumbs-redis-replica-data:
   thumbs-es-data:
   thumbs-upload-data:
-
-

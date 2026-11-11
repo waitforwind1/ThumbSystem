@@ -8,15 +8,19 @@ import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.es.BlogEsDoc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+
+import static com.usst.thumbs.common.constant.BlogIndexEventConstant.BLOG_INDEX_LOCK;
 
 @Slf4j
 @Component
@@ -26,9 +30,12 @@ public class BlogSearchIndexInitializer implements ApplicationRunner {
     private final ElasticsearchOperations elasticsearchOperations;
     private final BlogRepository blogRepository;
     private final BlogMapper blogMapper;
+    private final RedissonClient redissonClient;
 
     @Override
     public void run(ApplicationArguments args) {
+        RLock lock = redissonClient.getLock(BLOG_INDEX_LOCK);
+        lock.lock();
         try {
             IndexOperations indexOperations = elasticsearchOperations.indexOps(BlogEsDoc.class);
             if (indexOperations.exists()) {
@@ -68,6 +75,8 @@ public class BlogSearchIndexInitializer implements ApplicationRunner {
         } catch (Exception exception) {
             // ES 不可用时不阻塞主应用启动，后续重启应用即可再次触发初始化。
             log.error("Failed to initialize Elasticsearch article index", exception);
+        }finally {
+            lock.unlock();
         }
     }
 

@@ -39,7 +39,10 @@ import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -440,7 +443,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
             // 正常缓存 + 随机 TTL 防雪崩
             redisTemplate.opsForValue().set(
                     key,
-                    baseBlogVOS,
+                    new ArrayList<>(baseBlogVOS),
                     BlogConstant.BLOG_PAGE_TTL
                             + ThreadLocalRandom.current().nextLong(1, 11),
                     TimeUnit.MINUTES
@@ -634,7 +637,10 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         blogVo.setFavoriteCount(getRealtimeCount(
                 FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogVo.getId()), blogVo.getFavoriteCount()));
 
-        User loginUser = getLoginUser(request);
+        return fillPersonalStatus(blogVo, getLoginUser(request));
+    }
+
+    private BlogVO fillPersonalStatus(BlogVO blogVo, User loginUser) {
         if (loginUser == null) {
             return clearInteractionStatus(blogVo);
         }
@@ -666,6 +672,10 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
 
     private Long getRealtimeCount(String key, Long databaseCount) {
         Object value = redisTemplate.opsForValue().get(key);
+        return parseRealtimeCount(key, value, databaseCount);
+    }
+
+    private Long parseRealtimeCount(String key, Object value, Long databaseCount) {
         if (value instanceof Number number) {
             return number.longValue();
         }
@@ -683,9 +693,38 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         if (blogVOS == null || blogVOS.isEmpty()) {
             return blogVOS;
         }
-        return blogVOS.stream()
-                .map(blogVO -> fillInteractionStatus(copyBlogVO(blogVO), request))
-                .toList();
+
+        List<BlogVO> result = new ArrayList<>(blogVOS.size());
+        List<String> countKeys = new ArrayList<>(blogVOS.size() * 2);
+        for (BlogVO baseBlogVO : blogVOS) {
+            BlogVO blogVO = copyBlogVO(baseBlogVO);
+            result.add(blogVO);
+            if (blogVO.getId() != null) {
+                countKeys.add(ThumbConstant.BLOG_THUMB_COUNT_KEY.formatted(blogVO.getId()));
+                countKeys.add(FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogVO.getId()));
+            }
+        }
+
+        List<Object> counts = countKeys.isEmpty()
+                ? Collections.emptyList()
+                : redisTemplate.opsForValue().multiGet(countKeys);
+        User loginUser = getLoginUser(request);
+        int countIndex = 0;
+        for (BlogVO blogVO : result) {
+            if (blogVO.getId() == null) {
+                continue;
+            }
+            Object thumbCount = counts == null ? null : counts.get(countIndex);
+            blogVO.setThumbCount(parseRealtimeCount(
+                    countKeys.get(countIndex), thumbCount, blogVO.getThumbCount()));
+            countIndex++;
+            Object favoriteCount = counts == null ? null : counts.get(countIndex);
+            blogVO.setFavoriteCount(parseRealtimeCount(
+                    countKeys.get(countIndex), favoriteCount, blogVO.getFavoriteCount()));
+            countIndex++;
+            fillPersonalStatus(blogVO, loginUser);
+        }
+        return result;
     }
 
     private BlogVO copyBlogVO(BlogVO blogVO) {

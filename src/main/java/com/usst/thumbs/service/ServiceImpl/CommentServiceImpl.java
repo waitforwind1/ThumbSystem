@@ -8,8 +8,8 @@ import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.common.constant.CommentConstant;
 import com.usst.thumbs.common.constant.UserConstant;
 import com.usst.thumbs.common.exception.BusinessException;
-import com.usst.thumbs.mapper.CommentMapper;
 import com.usst.thumbs.mapper.BlogMapper;
+import com.usst.thumbs.mapper.CommentMapper;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.Comment;
 import com.usst.thumbs.model.User;
@@ -23,6 +23,8 @@ import com.usst.thumbs.service.InteractionEventService;
 import com.usst.thumbs.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,6 +36,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static com.usst.thumbs.common.constant.CommentConstant.COMMENT_LOCK_KEY;
 import static com.usst.thumbs.common.constant.UserState.USER_LOGIN_STATE;
 
 /**
@@ -59,6 +62,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -160,8 +165,33 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                         .map(item -> (CommentVO) item)
                         .toList();
             }
+            RLock lock = redissonClient.getLock(COMMENT_LOCK_KEY.formatted(blogId, size));
+            lock.lock();
+            try {
+                object = redisTemplate.opsForValue().get(key);
+                if(object!=null){
+                    if(object instanceof List<?> list){
+                        return list.stream()
+                                .filter(item -> item instanceof CommentVO)
+                                .map(item -> (CommentVO) item)
+                                .toList();
+                    }
+                }
+                List<CommentVO> result = queryComment(current, size, blogId);
+                redisTemplate.opsForValue().set(key,result, CommentConstant.COMMENT_FIRST_PAGE_TTL, TimeUnit.MINUTES);
+                return result;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }finally {
+                lock.unlock();
+            }
         }
+    return queryComment(current, size, blogId);
+    }
 
+
+    private List<CommentVO> queryComment(Integer current, Integer size,Long blogId){
+        List<CommentVO> result = new ArrayList<>();
         Page<Comment> page = new Page<>(current,size);
         Page<Comment> commentPage = this.page(page,new LambdaQueryWrapper<Comment>()
                 .eq(Comment::getBlogId,blogId)
@@ -169,23 +199,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
                 .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
                 .orderByDesc(Comment::getCreateTime));
         List<Comment> roots = commentPage.getRecords();
-        if (roots.isEmpty()) {
-            return Collections.emptyList();
-        }
         List<Long> rootIds = roots.stream().map(Comment::getId).toList();
         List<Comment> replies = this.list(
                 new LambdaQueryWrapper<Comment>()
-                    .in(Comment::getRootId, rootIds)
-                    .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
-                    .orderByAsc(Comment::getCreateTime)
+                        .in(Comment::getRootId, rootIds)
+                        .eq(Comment::getStatus, CommentConstant.COMMENT_NO_DELETE)
+                        .orderByAsc(Comment::getCreateTime)
         );
         List<Comment> comments = new ArrayList<>(roots.size() + replies.size());
         comments.addAll(roots);
         comments.addAll(replies);
-        List<CommentVO> result = buildCommentTree(comments);
-        if(current==1){
-            redisTemplate.opsForValue().set(key,result, CommentConstant.COMMENT_FIRST_PAGE_TTL, TimeUnit.MINUTES);
-        }
+        result = buildCommentTree(comments);
         return result;
     }
 

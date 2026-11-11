@@ -58,7 +58,6 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
         ensureUserFavoriteStateLoaded(userId);
         String userFavoriteKey = FavoriteConstant.USER_FAVORITE_KEY.formatted(userId);
         String blogFavoriteCountKey = FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogId);
-        stringRedisTemplate.opsForValue().setIfAbsent(blogFavoriteCountKey, String.valueOf(blog.getFavoriteCount()));
         String eventId = UUID.randomUUID().toString();
         Long res = stringRedisTemplate.execute(
                 RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
@@ -69,7 +68,8 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
                 String.valueOf(blog.getUserId()),
                 String.valueOf(InteractionEventConstant.FAVORITE_TYPE),
                 String.valueOf(InteractionEventConstant.ACTION_ADD),
-                String.valueOf(System.currentTimeMillis())
+                String.valueOf(System.currentTimeMillis()),
+                String.valueOf(blog.getFavoriteCount())
         );
         if(res.equals(DUPLICATE_RES))
             throw new BusinessException(ResultType.PARAM_ERROR,"已经收藏过啦");
@@ -88,7 +88,6 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
         ensureUserFavoriteStateLoaded(userId);
         String userFavoriteKey = FavoriteConstant.USER_FAVORITE_KEY.formatted(userId);
         String blogFavoriteCountKey = FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogId);
-        stringRedisTemplate.opsForValue().setIfAbsent(blogFavoriteCountKey, String.valueOf(blog.getFavoriteCount()));
         String eventId = UUID.randomUUID().toString();
         Long res = stringRedisTemplate.execute(
                 RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
@@ -99,7 +98,8 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite>
                 String.valueOf(blog.getUserId()),
                 String.valueOf(InteractionEventConstant.FAVORITE_TYPE),
                 String.valueOf(InteractionEventConstant.ACTION_CANCEL),
-                String.valueOf(System.currentTimeMillis())
+                String.valueOf(System.currentTimeMillis()),
+                String.valueOf(blog.getFavoriteCount())
         );
         if(res.equals(DUPLICATE_RES))
             throw new BusinessException(ResultType.PARAM_ERROR,"还未收藏，不能取消😢😢😢");

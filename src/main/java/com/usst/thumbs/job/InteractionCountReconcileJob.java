@@ -1,6 +1,8 @@
 package com.usst.thumbs.job;
 
 import com.usst.thumbs.common.constant.BlogConstant;
+import com.usst.thumbs.common.constant.FavoriteConstant;
+import com.usst.thumbs.common.constant.ThumbConstant;
 import com.usst.thumbs.mapper.BlogMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,8 @@ public class InteractionCountReconcileJob {
             for (Long blogId : mismatchIds) {
                 blogMapper.reconcileInteractionCounts(blogId);
                 redisTemplate.delete(BlogConstant.BLOG_DETAIL_KEY.formatted(blogId));
+                redisTemplate.delete(ThumbConstant.BLOG_THUMB_COUNT_KEY.formatted(blogId));
+                redisTemplate.delete(FavoriteConstant.BLOG_FAVORITE_COUNT_KEY.formatted(blogId));
             }
             if (!mismatchIds.isEmpty()) {
                 for (int size : List.of(10, 20, 50)) {

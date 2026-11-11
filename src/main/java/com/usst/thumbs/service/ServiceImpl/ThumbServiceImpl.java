@@ -66,7 +66,6 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
         ensureUserThumbStateLoaded(userId);
         String userThumbKey = ThumbConstant.USER_THUMB_KEY.formatted(userId);
         String blogCountKey = ThumbConstant.BLOG_THUMB_COUNT_KEY.formatted(blogId);
-        stringRedisTemplate.opsForValue().setIfAbsent(blogCountKey, String.valueOf(blog.getThumbCount()));
         String eventId = UUID.randomUUID().toString();
         Long result = stringRedisTemplate.execute(
                 RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
@@ -77,7 +76,8 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
                 String.valueOf(blog.getUserId()),
                 String.valueOf(InteractionEventConstant.THUMB_TYPE),
                 String.valueOf(ThumbConstant.ACTION_ADD),
-                String.valueOf(System.currentTimeMillis())
+                String.valueOf(System.currentTimeMillis()),
+                String.valueOf(blog.getThumbCount())
         );
         if(result.equals(-1L))
             throw new BusinessException(ResultType.ALREADY_EXITS_ERROR,"不能重复点赞");
@@ -100,7 +100,6 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
         ensureUserThumbStateLoaded(userId);
         String userThumbKey = ThumbConstant.USER_THUMB_KEY.formatted(userId);
         String blogCountKey = ThumbConstant.BLOG_THUMB_COUNT_KEY.formatted(blogId);
-        stringRedisTemplate.opsForValue().setIfAbsent(blogCountKey, String.valueOf(blog.getThumbCount()));
         String eventId = UUID.randomUUID().toString();
         Long res = stringRedisTemplate.execute(
                 RedisLuaScriptConstant.INTERACTION_STREAM_SCRIPT,
@@ -111,7 +110,8 @@ public class ThumbServiceImpl extends ServiceImpl<ThumbMapper, Thumb>
                 String.valueOf(blog.getUserId()),
                 String.valueOf(InteractionEventConstant.THUMB_TYPE),
                 String.valueOf(ACTION_CANCEL),
-                String.valueOf(System.currentTimeMillis())
+                String.valueOf(System.currentTimeMillis()),
+                String.valueOf(blog.getThumbCount())
         );
         if(res.equals(-1L))
             throw new BusinessException(ResultType.ALREADY_EXITS_ERROR,"还没有点赞，无法取消");

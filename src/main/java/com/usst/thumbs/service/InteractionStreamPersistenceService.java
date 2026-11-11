@@ -52,8 +52,6 @@ public class InteractionStreamPersistenceService {
             return;
         }
 
-        // The relationship row and its denormalized blog counter must commit or
-        // roll back together. RabbitMQ handles only secondary side effects.
         long delta = action == InteractionEventConstant.ACTION_ADD ? 1L : -1L;
         if (type == InteractionEventConstant.THUMB_TYPE) {
             blogMapper.batchUpdateThumbCount(Map.of(blogId, delta));

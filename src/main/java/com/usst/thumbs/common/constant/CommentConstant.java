@@ -2,6 +2,8 @@ package com.usst.thumbs.common.constant;
 
 public interface CommentConstant {
 
+    String COMMENT_LOCK_KEY = "CommentLock:%s:%s";
+
     String BLOG_COMMENT_FIRST_PAGE_KEY = "blog:comment:first-page:%s:%s";
 
     int DEFAULT_PAGE_NO = 1;

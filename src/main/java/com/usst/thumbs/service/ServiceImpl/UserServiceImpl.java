@@ -2,6 +2,7 @@ package com.usst.thumbs.service.ServiceImpl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.usst.thumbs.common.constant.UserConstant;
@@ -14,12 +15,13 @@ import com.usst.thumbs.model.request.UserUpdateRequest;
 import com.usst.thumbs.model.vo.UserProfileVO;
 import com.usst.thumbs.model.vo.UserVO;
 import com.usst.thumbs.result.ResultType;
+import com.usst.thumbs.service.BlogService;
 import com.usst.thumbs.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.usst.thumbs.common.constant.UserConstant.USER_IS_ADMIN;
@@ -30,6 +32,7 @@ import static com.usst.thumbs.common.constant.UserConstant.USER_IS_ADMIN;
 * @createDate 2026-04-28 17:21:25
 */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
 
     private static final String USER_LOGIN_STATE = "USER_LOGIN_STATE";
@@ -37,12 +40,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final UserMapper userMapper;
     private final BlogMapper blogMapper;
-
-    public UserServiceImpl(UserMapper userMapper, BlogMapper blogMapper) {
-        this.userMapper = userMapper;
-        this.blogMapper = blogMapper;
-    }
-
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Integer register(String account, String password, String checkPassword) {
@@ -63,10 +61,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User one = this.lambdaQuery().eq(User::getAccount, account).one();
         if(one!=null)
             throw new BusinessException(ResultType.USER_ACCOUNT_EXISTS,"账号已存在");
-        String encryptPassword = DigestUtils.md5DigestAsHex((SALT+password).getBytes(StandardCharsets.UTF_8));
+        String encodePassword = passwordEncoder.encode(password);
         User user = new User();
         user.setAccount(account);
-        user.setPassword(encryptPassword);
+        user.setPassword(encodePassword);
         return userMapper.insert(user);
     }
 
@@ -85,11 +83,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String regex = "^[A-Za-z0-9_]+$";
         if(!account.matches(regex))
             throw new BusinessException(ResultType.PARAM_ERROR,"账号格式允许字母数字下划线");
-
-        String newPassword = DigestUtils.md5DigestAsHex((SALT+password).getBytes(StandardCharsets.UTF_8));
-        User user = this.lambdaQuery().eq(User::getAccount, account).eq(User::getPassword, newPassword).one();
-        if(user==null)
-            throw new BusinessException(ResultType.USER_NOT_EXIST,"用户不存在");
+        User user = userMapper.selectOne(
+                Wrappers.<User>lambdaQuery()
+                        .eq(User::getAccount, account)
+        );
+        if (user == null) {
+            throw new BusinessException(ResultType.USER_NOT_EXIST,"用户名不粗在");
+        }
+        boolean matches = passwordEncoder.matches(password, user.getPassword());
+        if(!matches)
+            throw new BusinessException(ResultType.PARAM_ERROR,"密码错误");
         if(user.getStatus().equals(UserConstant.USER_IS_BAN))
             throw new BusinessException(ResultType.NO_AUTH,"用户已被封禁,找管理员解封");
         User safeUser = getsafeUser(user);

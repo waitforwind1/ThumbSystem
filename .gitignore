@@ -4,6 +4,9 @@ src/main/resources/application-local.yml
 docs/
 frontend/node_modules/
 frontend/dist/
+perf/results/
+tmp/
+uploads/
 *.log
 *.iml
 

@@ -45,7 +45,7 @@
         WHERE id IN
         <foreach collection="countMap.keySet()" item="id" open="(" separator="," close=")">
             #{id}
-        </foreach>
+        </foreach>t
     </update>
 
     <update id="batchUpdateCommentCount">

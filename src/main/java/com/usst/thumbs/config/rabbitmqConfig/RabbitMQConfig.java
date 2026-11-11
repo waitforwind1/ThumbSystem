@@ -41,7 +41,6 @@ public class RabbitMQConfig {
             ReturnedMessage returned = correlationData.getReturned();
             if(returned!=null)
                 return;
-
             String[] split = event.split(":", 2);
             String eventType = split[0];
             String eventId = split[1];

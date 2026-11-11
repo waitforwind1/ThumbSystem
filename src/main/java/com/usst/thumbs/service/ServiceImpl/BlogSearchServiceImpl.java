@@ -1,8 +1,9 @@
 package com.usst.thumbs.service.ServiceImpl;
 
 import cn.hutool.core.collection.CollUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.usst.thumbs.common.constant.BlogConstant;
 import com.usst.thumbs.model.Blog;
 import com.usst.thumbs.model.es.BlogEsDoc;
@@ -41,11 +42,13 @@ public class BlogSearchServiceImpl implements BlogSearchService {
         if (request == null || request.getKeyWord() == null || request.getKeyWord().isBlank()) {
             return ResultUtils.success(List.of());
         }
+
         String keyWord = request.getKeyWord();
         int pageNum = request.getPageNo() == null || request.getPageNo() <= 0 ? 1 : request.getPageNo();
         int pageSize = request.getPageSize() == null || request.getPageSize() <= 0
                 ? 10
                 : Math.min(request.getPageSize(), 50);
+
         List<Query> filters = new ArrayList<>();
         filters.add(Query.of(q -> q.term(t -> t
                 .field("status")
@@ -61,13 +64,15 @@ public class BlogSearchServiceImpl implements BlogSearchService {
                     .field("tag")
                     .value("*" + request.getTag() + "*"))));
         }
+        Query boolQuery = BoolQuery.of(b->b.filter(filters))._toQuery();
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q -> q
                         .multiMatch(m -> m
-                                .query(keyWord).fields("title", "content", "tag", "summary","category")
+                                .query(keyWord)
+                                .fields("title", "content", "tag", "summary","category")
                         )
                 )
-                .withFilter(f -> f.bool(b -> b.filter(filters)))
+                .withFilter(boolQuery)
                 .withHighlightQuery(new HighlightQuery(
                         new Highlight(
                                 List.of(
@@ -80,6 +85,7 @@ public class BlogSearchServiceImpl implements BlogSearchService {
                 ))
                 .withPageable(PageRequest.of(pageNum-1,pageSize))
                 .build();
+
         SearchHits<BlogEsDoc> searchHits = elasticsearchOperations.search(query,BlogEsDoc.class);
         if (searchHits.isEmpty()) {
             return ResultUtils.success(List.of());
